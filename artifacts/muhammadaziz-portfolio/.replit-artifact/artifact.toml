@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Muhammadaziz Yursinaliyev — Portfolio"
+description = "A polished personal portfolio for Muhammadaziz Yursinaliyev, showcasing software engineering work, essays, digital and anatomy sketches, and an interdisciplinary path toward surgery."
+version = "1.0.0"
+id = "artifacts/muhammadaziz-portfolio"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21799
+
+[services.development]
+run = "pnpm --filter @workspace/muhammadaziz-portfolio run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/muhammadaziz-portfolio", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/muhammadaziz-portfolio/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21799"
+BASE_PATH = "/"

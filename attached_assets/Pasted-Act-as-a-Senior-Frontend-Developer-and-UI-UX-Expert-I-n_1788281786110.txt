@@ -1,0 +1,50 @@
+Act as a Senior Frontend Developer and UI/UX Expert. I need you to build a highly professional, minimalistic, "Google-level" personal portfolio website for Muhammadaziz Yursinaliyev.
+
+TECH STACK:
+- Next.js 14+ (App Router)
+- TypeScript
+- Tailwind CSS
+- Framer Motion (for subtle, smooth page transitions and micro-interactions)
+- Lucide React (for minimalist icons)
+
+DESIGN SYSTEM (Google-level clean UI):
+- Vibe: Minimalist, fast, highly readable. Use plenty of whitespace.
+- Background: #FFFFFF (White) for main areas, #F8F9FA (Very light gray) for subtle sections.
+- Text Color: #202124 (Dark Gray) for optimal readability (never pure black).
+- Accent Color: #1A73E8 (Google Blue) for primary CTA buttons and active links.
+- Typography: Use 'Inter' for headings, navigation, and UI elements. Use 'Merriweather' (or a clean serif) for the body text in the Essays section to mimic Medium/Substack readability.
+
+SITEMAP & PAGE REQUIREMENTS:
+
+1. Global Layout:
+   - A clean, sticky Navbar with links: Home, Projects, Essays, Gallery, About.
+   - Minimalist Footer with social links (GitHub, LinkedIn, Email).
+
+2. Home (`/`):
+   - Hero Section: Large, clean typography.
+   - Headline: "Muhammadaziz Yursinaliyev — At the intersection of Software Engineering and Medicine."
+   - Subheadline: "Building impactful software and preparing for a future in surgery."
+   - CTA Buttons: "View Projects" (Primary, filled) and "Read Essays" (Secondary, outlined).
+
+3. Projects (`/projects`):
+   - A clean grid layout of Project Cards.
+   - Each card should present as a mini case-study: Title, brief 'Problem & Solution' description, Tech Stack tags (e.g., React Native, Supabase, TypeScript, Express.js), and a link icon.
+   - Include initial mock data for: "Kitobcha" (Mobile App) and "Eco-Xarita" (Environmental Initiative).
+
+4. Essays (`/essays`):
+   - A list of articles. Clean layout focused on typography.
+   - Each item should display: Title, Date, and "X min read".
+   - The individual essay page should have a narrow, centered reading column (max-w-2xl) for eye comfort.
+
+5. Gallery (`/gallery`):
+   - A responsive masonry or grid layout to showcase digital creations and hand-drawn medical/anatomy sketches. Includes subtle hover effects.
+
+6. About (`/about`):
+   - A clean resume-style page detailing: Background, Technical Skills (Udacity Full Stack Graduate), and Academic journey.
+
+INSTRUCTIONS FOR AI:
+1. Initialize the Next.js App Router structure.
+2. Set up the Tailwind configuration with the provided color palette and fonts.
+3. Generate the code for `app/layout.tsx`, a reusable `Navbar` component, and `app/page.tsx` first.
+4. Keep all components highly modular and fully responsive (mobile-first).
+5. Output the code block by block so I can implement it step by step.
