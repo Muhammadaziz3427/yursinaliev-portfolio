@@ -1,0 +1,84 @@
+Act as a Principal Full-Stack Engineer, Cyber-Security Specialist, and Creative UI/UX Architect. 
+
+I want to build a world-class, dynamic portfolio website and personal platform for Muhammadaziz Yursinaliyev (yursinaliev.com). The platform bridges two high-precision domains: Medicine/Surgery and Cybersecurity/Software Engineering.
+
+=========================================
+1. TECH STACK & ARCHITECTURE
+=========================================
+- Framework: Next.js 14+ (App Router, Server Actions)
+- Language: TypeScript (Strict mode)
+- Styling: Tailwind CSS, Shadcn UI
+- Animations: Framer Motion (Cyber-fluid micro-interactions and grid effects)
+- Database & Auth: Supabase (PostgreSQL, Row Level Security, Storage Buckets, Auth)
+- Icons: Lucide React + Custom Cyber-Bio SVG Icons
+- Security: DOMPurify (XSS protection), Rate Limiting, Strict Security Headers (Helmet pattern)
+
+=========================================
+2. DESIGN SYSTEM: "BIO-CYBER minimal"
+=========================================
+- Theme: Dark Mode by default with a high-tech Bio-Cyber aesthetic.
+- Colors:
+  - Deep Background: #0B0F17 (Dark Obsidian Space)
+  - Card/Container: #131B27 with subtle glassmorphism (`backdrop-blur-md`)
+  - Accent 1 (Cyber/Tech): #00F5A0 (Neon Emerald Green / Terminal Glow)
+  - Accent 2 (Medical/Precision): #00D2FF (Neural/Cyan Blue)
+  - Text: #E2E8F0 (High contrast light slate gray for zero eye fatigue)
+- Aesthetics: Subtle grid background lines, monospace font details (`Fira Code` or `JetBrains Mono`) for tech tags, clean sans-serif (`Inter`) for main UI and reading experience.
+
+=========================================
+3. USER & AUTHENTICATION SYSTEM (RBAC)
+=========================================
+- Role-Based Access Control (RBAC):
+  - Admin (Site Owner): Full CRUD access to `/admin` dashboard.
+  - User/Visitor: Can log in via Google OAuth or Email Magic Link to comment, like projects/essays, and bookmark content.
+  - Guest (Unauthenticated): Read-only access to public routes.
+
+=========================================
+4. SITEMAP & CORE FEATURES
+=========================================
+1. Global Features:
+   - Command Palette (`Cmd + K` / `Ctrl + K`): Terminal-style search bar to search across all Projects, Essays, Anatomy Sketches, and Navigation routes instantly.
+   - Live Activity Log Widget: A small cyber terminal on the homepage displaying real-time site updates or recent GitHub/Essay activity.
+   - i18n Support: Multi-language setup (Uzbek, English, Turkish).
+
+2. Home (`/`):
+   - Hero Section: High-impact typography. "Muhammadaziz Yursinaliyev — Software Engineer & Future Surgeon."
+   - Dual-core focus visual: Medical precision x Cyber-security code aesthetic.
+   - Featured Projects, Recent Essays, and Live Status.
+
+3. Projects (`/projects`):
+   - Interactive project cards (Kitobcha, Eco-Xarita, etc.) with case studies: Problem, Solution, Tech Stack, Live Demo, GitHub link.
+   - User Interactions: Like count button, bookmarking, and public discussion/comment section per project.
+
+4. Essays (`/essays`):
+   - Medium/Substack-level reading view with dynamic Table of Contents, reading progress bar, estimated read time.
+   - User Comments & Likes section at the bottom (Supabase backend).
+
+5. Gallery (`/gallery`):
+   - Bio-Medical Anatomy sketches & UI/UX design showcase.
+   - High-resolution viewer modal with interactive zoom and detail breakdown.
+
+6. Secure Admin Dashboard (`/admin`):
+   - Protected route with Supabase Auth (Admin Role Check).
+   - CRUD management for Projects, Essays, Gallery uploads, User comment moderation, and Analytics overview.
+
+=========================================
+5. SUPABASE DATABASE SCHEMA REQUIREMENTS
+=========================================
+Please generate the complete SQL scripts for Supabase including:
+- `profiles` table (id, email, full_name, avatar_url, role ['admin', 'user'], created_at)
+- `projects` table (id, title, slug, problem_solution, tech_stack array, github_url, live_url, cover_image, likes_count, created_at)
+- `essays` table (id, title, slug, content_markdown, cover_image, read_time, likes_count, published_at)
+- `gallery` table (id, title, category ['anatomy', 'ui_design'], image_url, description, created_at)
+- `comments` table (id, user_id, essay_id, project_id, content, created_at)
+- `likes` table (id, user_id, essay_id, project_id)
+- Row Level Security (RLS) policies allowing public read, user-restricted comment/like insertion, and admin-only full write/update/delete access.
+
+=========================================
+6. INSTRUCTIONS FOR THE AI
+=========================================
+1. Provide the complete Supabase SQL Migration script first.
+2. Setup the Next.js directory structure with Tailwind config and custom theme extension.
+3. Build the core components: `Navbar` (with Cmd+K trigger), `Footer`, `CommandPalette`, and `ActivityLog`.
+4. Implement Server Actions for handling Supabase queries safely with error handling and Zod schema validation.
+5. Create the UI for both public dynamic routes and the protected Admin CMS step-by-step.
