@@ -695,6 +695,15 @@ button { font: inherit; }
 
 /* Bio-cyber dark layer */
 :root {
+  --paper: #0B0F17;
+  --paper-blue: #101B28;
+  --ink: #E2E8F0;
+  --ink-soft: #93A4B8;
+  --line: rgba(148, 163, 184, .16);
+  --blue: #00F5A0;
+  --blue-deep: #00D2FF;
+  --yellow: #D7F271;
+  --mint: #132F34;
   --background: 220 23% 5%;
   --foreground: 150 24% 93%;
   --card: 215 20% 9%;

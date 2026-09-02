@@ -1,4 +1,5 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
+import type { Request } from "express";
 
 // Required runtime assumptions: the Supabase connector is attached to the Replit
 // environment. APP_URL/CORS_ORIGIN/SUPABASE_OAUTH_REDIRECT_URL are optional
@@ -23,6 +24,10 @@ export function bearerToken(header: string | undefined): string | undefined {
   if (!header) return undefined;
   const match = /^Bearer\s+([A-Za-z0-9._~+/=-]+)$/i.exec(header.trim());
   return match?.[1];
+}
+
+export function requestToken(req: Request): string | undefined {
+  return bearerToken(req.get("authorization")) ?? req.cookies?.portfolio_access_token;
 }
 
 export async function responseJson<T>(response: Response): Promise<T | null> {

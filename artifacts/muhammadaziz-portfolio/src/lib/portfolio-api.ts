@@ -27,14 +27,18 @@ const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
     headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
     ...options,
   });
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) {
+    const error = new Error(`Request failed: ${response.status}`) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
   return response.json() as Promise<T>;
 };
 
 export const getPortfolio = () => request<PortfolioPayload>('/api/portfolio');
 export const getAdminSummary = () => request<AdminSummary>('/api/admin/summary');
 export const postLike = (targetType: 'project' | 'essay', targetId: string) =>
-  request<{ liked: boolean }>('/api/interactions/like', {
+  request<{ liked: boolean; likesCount: number | null }>('/api/interactions/like', {
     method: 'POST',
     body: JSON.stringify({ targetType, targetId }),
   });

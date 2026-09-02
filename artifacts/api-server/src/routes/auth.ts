@@ -1,13 +1,13 @@
 import { Router, type IRouter } from "express";
 import { rateLimit } from "../lib/rate-limit";
-import { bearerToken, responseJson, supabaseRequest } from "../lib/supabase";
+import { requestToken, responseJson, supabaseRequest } from "../lib/supabase";
 
 const router: IRouter = Router();
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const callbackUrl = () => process.env.SUPABASE_OAUTH_REDIRECT_URL ?? `${process.env.APP_URL ?? ""}/api/auth/callback`;
 
 router.get("/auth/status", async (req, res): Promise<void> => {
-  const token = bearerToken(req.get("authorization"));
+  const token = requestToken(req);
   if (!token) { res.json({ authenticated: false }); return; }
   const response = await supabaseRequest("/auth/v1/user", { bearer: token });
   const user = await responseJson<unknown>(response);
@@ -32,6 +32,10 @@ router.get("/auth/google", async (_req, res): Promise<void> => {
   const location = response.headers.get("location");
   if (location) { res.redirect(location); return; }
   res.status(502).json({ error: "Unable to start Google authentication" });
+});
+
+router.post("/auth/google", (_req, res): void => {
+  res.json({ url: "/api/auth/google" });
 });
 
 router.get("/auth/callback", async (req, res): Promise<void> => {
