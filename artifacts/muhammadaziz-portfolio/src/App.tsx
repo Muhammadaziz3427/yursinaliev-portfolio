@@ -1,4 +1,4 @@
-import { createContext, type FormEvent, type ReactNode, useContext, useEffect, useMemo, useState, useRef } from 'react';
+import { createContext, useCallback, type FormEvent, type ReactNode, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowDownRight,
@@ -167,6 +167,7 @@ const usePortfolio = () => useContext(PortfolioContext);
 // 2. DATA MODELS & SEED CONTENT
 // ==========================================
 export type Project = {
+  id?: string;
   slug: string;
   number: string;
   name: string;
@@ -180,6 +181,7 @@ export type Project = {
   githubUrl: string;
   liveUrl: string;
   category: 'Product' | 'Security' | 'Medicine' | 'Prototype';
+  imageUrl?: string;
 };
 
 export type Essay = {
@@ -1665,137 +1667,536 @@ function AboutPage() {
 // ==========================================
 // 14. ADMIN CMS DASHBOARD (PROTECTED GATEWAY)
 // ==========================================
-function AdminPage() {
-  const { t } = useLocale();
-  const openSignIn = useSignIn();
-  const [summary, setSummary] = useState<AdminSummary | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'forbidden'>('ready');
-  const [activeTab, setActiveTab] = useState<'projects' | 'essays' | 'gallery' | 'comments'>('projects');
+
+// ---------- Auth Gate ----------
+function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: string) => void }) {
+  const [email, setEmail] = useState('');
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleMagicLink = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setPending(true);
+    setMessage('');
+    try {
+      const { supabase: sb } = await import('@/lib/supabase');
+      const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+      if (error) throw error;
+      setMessage('✓ Magic link dispatched — check your inbox and click the link to enter.');
+    } catch {
+      setMessage('⚠ Sign-in failed. Ensure this email is an authorised admin account.');
+    } finally {
+      setPending(false);
+    }
+  };
 
   useEffect(() => {
-    getAdminSummary()
-      .then((val) => setSummary(val))
-      .catch(() => setSummary({ projects: 4, essays: 3, gallery: 5, interactions: 18 }));
-  }, []);
+    let mounted = true;
+    import('@/lib/supabase').then(({ supabase: sb, isAdmin }) => {
+      const { data: listener } = sb.auth.onAuthStateChange(async (_event, session) => {
+        if (!mounted) return;
+        if (session?.user?.email) {
+          const admin = await isAdmin();
+          if (admin) onAuthenticated(session.user.email);
+          else setMessage('⛔ Access denied — this account has no admin privileges.');
+        }
+      });
+      return () => { mounted = false; listener.subscription.unsubscribe(); };
+    });
+  }, [onAuthenticated]);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 pt-24 pb-16 font-mono space-y-8">
-      {/* Security Banner */}
-      <div className="flex flex-wrap items-center justify-between p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
-        <div className="flex items-center gap-3">
-          <ShieldCheck size={20} className="text-emerald-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[#0B0F17]/95 backdrop-blur-xl">
+      <div className="pointer-events-none fixed inset-0 z-0" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,160,0.015) 2px, rgba(0,245,160,0.015) 4px)' }} />
+      <div className="pointer-events-none fixed top-20 left-20 w-72 h-72 rounded-full bg-emerald-500/5 blur-3xl" />
+      <div className="pointer-events-none fixed bottom-20 right-20 w-96 h-96 rounded-full bg-cyan-500/5 blur-3xl" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#131B27]/80 backdrop-blur-2xl p-8 shadow-[0_0_80px_rgba(0,245,160,0.08)]"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,245,160,0.15)]">
+            <ShieldCheck size={20} className="text-emerald-400" />
+          </div>
           <div>
-            <div className="text-xs font-bold text-slate-100">{t('verifiedAdmin')}</div>
-            <div className="text-[10px] text-slate-400">Supabase RLS & Role Verification Active</div>
+            <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest">Restricted Zone</div>
+            <div className="text-lg font-bold text-slate-100 font-serif">Admin Access</div>
           </div>
         </div>
+        <p className="text-xs text-slate-400 font-mono mb-6 leading-relaxed border-l-2 border-emerald-500/40 pl-3">
+          This dashboard is protected by Supabase RBAC. Only verified admin accounts may enter.
+        </p>
+        <form onSubmit={handleMagicLink} className="space-y-3">
+          <input
+            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@yursinaliev.com"
+            className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 font-mono text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 transition-all placeholder:text-slate-600"
+          />
+          <motion.button type="submit" disabled={pending} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+            className="w-full py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(0,245,160,0.1)] disabled:opacity-50">
+            {pending ? 'Dispatching…' : '→ Send Magic Link'}
+          </motion.button>
+        </form>
+        {message && (
+          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+            className={`mt-4 text-xs font-mono px-3 py-2 rounded-lg border ${message.startsWith('✓') ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300' : 'border-red-500/30 bg-red-500/5 text-red-300'}`}>
+            {message}
+          </motion.div>
+        )}
+        <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] font-mono text-slate-600 flex items-center gap-2">
+          <Shield size={10} className="text-slate-600" />
+          <span>Supabase Auth · RBAC · RLS Enforced · Zero-Trust</span>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
-        <button
-          type="button"
-          onClick={openSignIn}
-          className="text-xs text-emerald-400 hover:underline flex items-center gap-1 mt-2 sm:mt-0"
-        >
-          <LockKeyhole size={12} /> Switch Session
-        </button>
+type ModalMode = 'create' | 'edit';
+
+function ProjectModal({ mode, initial, onClose, onSave }: { mode: ModalMode; initial?: Partial<Project>; onClose: () => void; onSave: (data: Partial<Project> & { imageFile?: File }) => Promise<void> }) {
+  const [form, setForm] = useState<Partial<Project> & { imageFile?: File }>({ name: '', summary: '', problem: '', solution: '', result: '', year: '', role: '', githubUrl: '', liveUrl: '', category: 'Product', techStack: [], ...initial });
+  const [techInput, setTechInput] = useState((initial?.techStack ?? []).join(', '));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const handleSave = async () => {
+    setSaving(true); setError('');
+    try { await onSave({ ...form, techStack: techInput.split(',').map(s => s.trim()).filter(Boolean) }); onClose(); }
+    catch (e: any) { setError(e.message ?? 'Failed to save.'); }
+    finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={onClose}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-emerald-500/30 bg-[#131B27] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs uppercase tracking-wider"><Code size={14} /> {mode === 'create' ? 'New Project' : 'Edit Project'}</div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200"><X size={18} /></button>
+        </div>
+        <div className="space-y-3 text-sm">
+          {([['name','Project Name'],['summary','Summary'],['problem','Problem'],['solution','Solution'],['result','Result'],['year','Year'],['role','Role'],['githubUrl','GitHub URL'],['liveUrl','Live URL']] as [keyof Project, string][]).map(([key, label]) => (
+            <div key={key}><label className="block text-xs text-slate-400 font-mono mb-1">{label}</label>
+              <input value={(form[key] as string) ?? ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400" /></div>
+          ))}
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Tech Stack (comma-separated)</label>
+            <input value={techInput} onChange={e => setTechInput(e.target.value)} placeholder="React, TypeScript, Supabase"
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400" /></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Category</label>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as Project['category'] }))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400">
+              {(['Product','Security','Medicine','Prototype'] as const).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Cover Image</label>
+            <input type="file" accept="image/*" onChange={e => setForm(f => ({ ...f, imageFile: e.target.files?.[0] }))}
+              className="w-full text-xs text-slate-400 font-mono file:mr-3 file:px-3 file:py-1 file:rounded file:bg-slate-800 file:text-emerald-400 file:border file:border-emerald-500/30 file:text-xs" /></div>
+        </div>
+        {error && <p className="mt-3 text-xs text-red-400 font-mono">{error}</p>}
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={onClose} className="px-4 py-2 text-xs font-mono text-slate-400 hover:text-slate-200">Cancel</button>
+          <motion.button onClick={handleSave} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="px-5 py-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold disabled:opacity-50 transition-all">
+            {saving ? 'Saving…' : mode === 'create' ? 'Create' : 'Save Changes'}</motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function EssayModal({ mode, initial, onClose, onSave }: { mode: ModalMode; initial?: Partial<Essay>; onClose: () => void; onSave: (data: Partial<Essay>) => Promise<void> }) {
+  const [form, setForm] = useState<Partial<Essay>>({ title: '', type: '', dek: '', date: '', read: '', ...initial });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const handleSave = async () => {
+    setSaving(true); setError('');
+    try { await onSave(form); onClose(); }
+    catch (e: any) { setError(e.message ?? 'Failed to save.'); }
+    finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={onClose}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-[#131B27] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2 text-cyan-400 font-mono text-xs uppercase tracking-wider"><Layers size={14} /> {mode === 'create' ? 'New Essay' : 'Edit Essay'}</div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200"><X size={18} /></button>
+        </div>
+        <div className="space-y-3">
+          {([['title','Title'],['type','Type / Category'],['dek','Deck / Subtitle'],['date','Date'],['read','Read Time']] as [keyof Essay, string][]).map(([key, label]) => (
+            <div key={key}><label className="block text-xs text-slate-400 font-mono mb-1">{label}</label>
+              <input value={(form[key] as string) ?? ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-cyan-400" /></div>
+          ))}
+        </div>
+        {error && <p className="mt-3 text-xs text-red-400 font-mono">{error}</p>}
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={onClose} className="px-4 py-2 text-xs font-mono text-slate-400 hover:text-slate-200">Cancel</button>
+          <motion.button onClick={handleSave} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="px-5 py-2 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold disabled:opacity-50 transition-all">
+            {saving ? 'Saving…' : mode === 'create' ? 'Create' : 'Save Changes'}</motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function GalleryModal({ mode, initial, onClose, onSave }: { mode: ModalMode; initial?: Partial<ArtPiece>; onClose: () => void; onSave: (data: Partial<ArtPiece> & { imageFile?: File }) => Promise<void> }) {
+  const [form, setForm] = useState<Partial<ArtPiece> & { imageFile?: File }>({ title: '', note: '', category: 'Anatomy', aspectRatio: '16/10', details: [], ...initial });
+  const [detailsInput, setDetailsInput] = useState((initial?.details ?? []).join('\n'));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const handleSave = async () => {
+    setSaving(true); setError('');
+    try { await onSave({ ...form, details: detailsInput.split('\n').map(s => s.trim()).filter(Boolean) }); onClose(); }
+    catch (e: any) { setError(e.message ?? 'Failed to save.'); }
+    finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={onClose}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-emerald-500/30 bg-[#131B27] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2 text-emerald-300 font-mono text-xs uppercase tracking-wider"><ZoomIn size={14} /> {mode === 'create' ? 'New Gallery Item' : 'Edit Gallery Item'}</div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200"><X size={18} /></button>
+        </div>
+        <div className="space-y-3">
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Title</label>
+            <input value={form.title ?? ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400" /></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Note / Medium</label>
+            <input value={form.note ?? ''} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400" /></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Category</label>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as ArtPiece['category'] }))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400">
+              {(['Anatomy','UI Design','Cyber Architecture'] as const).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Aspect Ratio</label>
+            <select value={form.aspectRatio} onChange={e => setForm(f => ({ ...f, aspectRatio: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400">
+              {['16/10','16/9','4/3','1/1'].map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Details (one per line)</label>
+            <textarea rows={4} value={detailsInput} onChange={e => setDetailsInput(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400 resize-none" /></div>
+          <div><label className="block text-xs text-slate-400 font-mono mb-1">Image</label>
+            <input type="file" accept="image/*" onChange={e => setForm(f => ({ ...f, imageFile: e.target.files?.[0] }))}
+              className="w-full text-xs text-slate-400 font-mono file:mr-3 file:px-3 file:py-1 file:rounded file:bg-slate-800 file:text-emerald-400 file:border file:border-emerald-500/30 file:text-xs" /></div>
+        </div>
+        {error && <p className="mt-3 text-xs text-red-400 font-mono">{error}</p>}
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={onClose} className="px-4 py-2 text-xs font-mono text-slate-400 hover:text-slate-200">Cancel</button>
+          <motion.button onClick={handleSave} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="px-5 py-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold disabled:opacity-50 transition-all">
+            {saving ? 'Saving…' : mode === 'create' ? 'Create' : 'Save Changes'}</motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function AdminPage() {
+  const { t } = useLocale();
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authed' | 'denied'>('checking');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [activeTab, setActiveTab] = useState<'projects' | 'essays' | 'gallery' | 'telemetry'>('projects');
+  const [liveProjects, setLiveProjects] = useState<Project[]>([]);
+  const [liveEssays, setLiveEssays] = useState<Essay[]>([]);
+  const [liveGallery, setLiveGallery] = useState<ArtPiece[]>([]);
+  const [telemetryLogs, setTelemetryLogs] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [projectModal, setProjectModal] = useState<{ mode: ModalMode; initial?: Partial<Project> } | null>(null);
+  const [essayModal, setEssayModal] = useState<{ mode: ModalMode; initial?: Partial<Essay> } | null>(null);
+  const [galleryModal, setGalleryModal] = useState<{ mode: ModalMode; initial?: Partial<ArtPiece> } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ table: string; id: string; label: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    import('@/lib/supabase').then(async ({ isAdmin, getSession }) => {
+      try {
+        const session = await getSession();
+        if (!session) { if (!cancelled) setAuthStatus('denied'); return; }
+        const admin = await isAdmin();
+        if (!cancelled) {
+          setAdminEmail(session.user?.email ?? '');
+          setAuthStatus(admin ? 'authed' : 'denied');
+        }
+      } catch { if (!cancelled) setAuthStatus('denied'); }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setDataLoading(true);
+    try {
+      const { listProjects, listEssays, listGallery, listTelemetryLogs } = await import('@/lib/cms-api');
+      const [dbP, dbE, dbG, dbT] = await Promise.allSettled([listProjects(), listEssays(), listGallery(), listTelemetryLogs()]);
+      setLiveProjects(dbP.status === 'fulfilled' && dbP.value.length > 0 ? dbP.value : projects);
+      setLiveEssays(dbE.status === 'fulfilled' && dbE.value.length > 0 ? dbE.value : essays);
+      setLiveGallery(dbG.status === 'fulfilled' && dbG.value.length > 0 ? dbG.value : artPieces);
+      setTelemetryLogs(dbT.status === 'fulfilled' ? dbT.value : []);
+    } finally { setDataLoading(false); }
+  }, []);
+
+  useEffect(() => { if (authStatus === 'authed') loadData(); }, [authStatus, loadData]);
+
+  useEffect(() => {
+    if (authStatus !== 'authed') return;
+    let unsub: (() => void) | undefined;
+    import('@/lib/supabase').then(({ supabase: sb }) => {
+      const ch = sb.channel('admin-rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'essays' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'telemetry_logs' }, () => loadData())
+        .subscribe();
+      unsub = () => sb.removeChannel(ch);
+    });
+    return () => unsub?.();
+  }, [authStatus, loadData]);
+
+  const handleSaveProject = async (data: Partial<Project> & { imageFile?: File }) => {
+    const { createProject, updateProject, uploadMedia } = await import('@/lib/cms-api');
+    let imageUrl = '';
+    if (data.imageFile) imageUrl = await uploadMedia(data.imageFile, 'projects');
+    if (projectModal?.mode === 'create') await createProject({ ...data, imageUrl } as any);
+    else if (projectModal?.initial?.slug) await updateProject(projectModal.initial.slug, { ...data, imageUrl } as any);
+    await loadData();
+  };
+
+  const handleSaveEssay = async (data: Partial<Essay>) => {
+    const { createEssay, updateEssay } = await import('@/lib/cms-api');
+    if (essayModal?.mode === 'create') await createEssay(data as any);
+    else if (essayModal?.initial?.slug) await updateEssay(essayModal.initial.slug, data as any);
+    await loadData();
+  };
+
+  const handleSaveGallery = async (data: Partial<ArtPiece> & { imageFile?: File }) => {
+    const { createGalleryItem, updateGalleryItem, uploadMedia } = await import('@/lib/cms-api');
+    let imageUrl = '';
+    if (data.imageFile) imageUrl = await uploadMedia(data.imageFile, 'gallery');
+    if (galleryModal?.mode === 'create') await createGalleryItem({ ...data, imageUrl, imageFile: data.imageFile! } as any);
+    else if (galleryModal?.initial?.id) await updateGalleryItem(galleryModal.initial.id, { ...data, imageUrl } as any);
+    await loadData();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    const api = await import('@/lib/cms-api');
+    if (deleteConfirm.table === 'projects') await api.deleteProject(deleteConfirm.id);
+    else if (deleteConfirm.table === 'essays') await api.deleteEssay(deleteConfirm.id);
+    else if (deleteConfirm.table === 'gallery') await api.deleteGalleryItem(deleteConfirm.id);
+    setDeleteConfirm(null);
+    await loadData();
+  };
+
+  const handleSignOut = async () => {
+    const { signOut } = await import('@/lib/supabase');
+    await signOut();
+    setAuthStatus('denied');
+  };
+
+  if (authStatus === 'checking') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-mono text-slate-500">Verifying admin credentials…</p>
+        </div>
       </div>
+    );
+  }
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  if (authStatus === 'denied') {
+    return <AdminAuthGate onAuthenticated={(em) => { setAdminEmail(em); setAuthStatus('authed'); }} />;
+  }
+
+  const tabs = ['projects', 'essays', 'gallery', 'telemetry'] as const;
+
+  return (
+    <div className="max-w-6xl mx-auto px-6 pt-24 pb-16 space-y-8">
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,245,160,0.01) 3px, rgba(0,245,160,0.01) 4px)' }} />
+
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 flex flex-wrap items-center justify-between p-4 rounded-2xl border border-emerald-500/30 bg-[#131B27]/80 backdrop-blur-xl shadow-[0_0_40px_rgba(0,245,160,0.06)]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,245,160,0.15)]">
+            <ShieldCheck size={18} className="text-emerald-400" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-slate-100">{t('verifiedAdmin')}</div>
+            <div className="text-[10px] font-mono text-emerald-400">{adminEmail} · Supabase RBAC Active</div>
+          </div>
+        </div>
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSignOut}
+          className="flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500/40 px-3 py-1.5 rounded-lg transition-all mt-2 sm:mt-0">
+          <LockKeyhole size={12} /> Sign Out
+        </motion.button>
+      </motion.div>
+
+      {/* Metrics */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Projects', val: summary?.projects ?? 4, icon: Code, color: 'text-emerald-400' },
-          { label: 'Essays', val: summary?.essays ?? 3, icon: Layers, color: 'text-cyan-400' },
-          { label: 'Anatomy Plates', val: summary?.gallery ?? 5, icon: Stethoscope, color: 'text-emerald-300' },
-          { label: 'Interactions', val: summary?.interactions ?? 18, icon: MessageSquare, color: 'text-pink-400' },
+          { label: 'Projects', val: liveProjects.length, icon: Code, color: 'text-emerald-400' },
+          { label: 'Essays', val: liveEssays.length, icon: Layers, color: 'text-cyan-400' },
+          { label: 'Gallery', val: liveGallery.length, icon: Stethoscope, color: 'text-emerald-300' },
+          { label: 'Telemetry', val: telemetryLogs.length, icon: Terminal, color: 'text-pink-400' },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={i} className="p-4 rounded-xl border border-slate-800 bg-[#131B27]">
+            <motion.div key={i} whileHover={{ scale: 1.02, y: -2 }}
+              className="p-4 rounded-2xl border border-slate-800 bg-[#131B27]/80 backdrop-blur-sm cursor-default transition-all">
               <div className="flex items-center justify-between text-slate-400 mb-2">
-                <span className="text-xs">{stat.label}</span>
+                <span className="text-[11px] font-mono uppercase tracking-wider">{stat.label}</span>
                 <Icon size={14} className={stat.color} />
               </div>
-              <div className="text-2xl font-bold text-slate-100">{stat.val}</div>
-            </div>
+              <div className="text-3xl font-bold text-slate-100 font-serif">{dataLoading ? '…' : stat.val}</div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
-      {/* Management Console */}
-      <div className="rounded-xl border border-slate-800 bg-[#131B27] overflow-hidden">
-        <div className="flex border-b border-slate-800 px-4 pt-3 gap-4">
-          {(['projects', 'essays', 'gallery', 'comments'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-xs uppercase tracking-wider border-b-2 transition-all ${
-                activeTab === tab
-                  ? 'border-emerald-400 text-emerald-400 font-bold'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      {/* CMS Console */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="relative z-10 rounded-2xl border border-slate-800 bg-[#131B27]/80 backdrop-blur-xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-800 px-5 pt-4">
+          <div className="flex gap-1">
+            {tabs.map((tab) => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`pb-3 px-3 text-xs font-mono uppercase tracking-widest border-b-2 transition-all ${activeTab === tab ? 'border-emerald-400 text-emerald-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+                {tab}
+              </button>
+            ))}
+          </div>
+          {activeTab !== 'telemetry' && (
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => { if (activeTab === 'projects') setProjectModal({ mode: 'create' }); else if (activeTab === 'essays') setEssayModal({ mode: 'create' }); else if (activeTab === 'gallery') setGalleryModal({ mode: 'create' }); }}
+              className="mb-3 flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 transition-all">
+              <span className="text-base leading-none">+</span> Add {activeTab.slice(0, -1)}
+            </motion.button>
+          )}
         </div>
 
-        <div className="p-6">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs text-slate-500">
-            <span>RECORD IDENTIFIER</span>
-            <span>STATUS</span>
-            <span>ACTIONS</span>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            {activeTab === 'projects' &&
-              projects.map((p) => (
-                <div key={p.slug} className="flex items-center justify-between py-2 border-b border-slate-800/40 text-slate-200">
-                  <div className="flex items-center gap-3">
-                    <span className="text-emerald-400 font-bold">{p.number}</span>
-                    <span>{p.name}</span>
+        <div className="p-5">
+          {dataLoading ? (
+            <div className="py-12 text-center">
+              <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-xs font-mono text-slate-500">Syncing with Supabase…</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              {activeTab === 'projects' && (
+                <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-[10px] font-mono uppercase tracking-wider text-slate-600 pb-2 border-b border-slate-800 px-2">
+                    <span>Name</span><span>Category</span><span>Status</span><span>Actions</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] border border-emerald-500/20">
-                    Live
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/projects/${p.slug}`} className="text-cyan-400 hover:underline">View</Link>
-                  </div>
-                </div>
-              ))}
+                  {liveProjects.map((p, i) => (
+                    <motion.div key={p.slug} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                      className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center py-2.5 px-2 rounded-lg hover:bg-slate-800/40 text-xs font-mono transition-all group">
+                      <div><span className="text-emerald-400 font-bold mr-2">{p.number}</span><span className="text-slate-200">{p.name}</span></div>
+                      <span className="text-slate-400">{p.category}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] border border-emerald-500/20">Live</span>
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setProjectModal({ mode: 'edit', initial: p })} className="p-1 rounded text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all" title="Edit"><Eye size={13} /></button>
+                        <button onClick={() => setDeleteConfirm({ table: 'projects', id: p.slug, label: p.name })} className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Delete"><Trash2 size={13} /></button>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {liveProjects.length === 0 && <div className="py-8 text-center text-xs font-mono text-slate-500">No projects. Click "+ Add project".</div>}
+                </motion.div>
+              )}
 
-            {activeTab === 'essays' &&
-              essays.map((e) => (
-                <div key={e.slug} className="flex items-center justify-between py-2 border-b border-slate-800/40 text-slate-200">
-                  <span className="truncate max-w-sm">{e.title}</span>
-                  <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 text-[10px] border border-cyan-500/20">
-                    Published
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/essays/${e.slug}`} className="text-cyan-400 hover:underline">Read</Link>
+              {activeTab === 'essays' && (
+                <motion.div key="essays" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-[10px] font-mono uppercase tracking-wider text-slate-600 pb-2 border-b border-slate-800 px-2">
+                    <span>Title</span><span>Read Time</span><span>Status</span><span>Actions</span>
                   </div>
-                </div>
-              ))}
+                  {liveEssays.map((e, i) => (
+                    <motion.div key={e.slug} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                      className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center py-2.5 px-2 rounded-lg hover:bg-slate-800/40 text-xs font-mono transition-all group">
+                      <span className="text-slate-200 truncate">{e.title}</span>
+                      <span className="text-slate-400">{e.read}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] border border-cyan-500/20">Published</span>
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setEssayModal({ mode: 'edit', initial: e })} className="p-1 rounded text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all" title="Edit"><Eye size={13} /></button>
+                        <button onClick={() => setDeleteConfirm({ table: 'essays', id: e.slug, label: e.title })} className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Delete"><Trash2 size={13} /></button>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {liveEssays.length === 0 && <div className="py-8 text-center text-xs font-mono text-slate-500">No essays. Click "+ Add essay".</div>}
+                </motion.div>
+              )}
 
-            {activeTab === 'gallery' &&
-              artPieces.map((a) => (
-                <div key={a.id} className="flex items-center justify-between py-2 border-b border-slate-800/40 text-slate-200">
-                  <span className="truncate max-w-sm">{a.title}</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] border border-emerald-500/20">
-                    {a.category}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Link href="/gallery" className="text-emerald-400 hover:underline">Inspect</Link>
+              {activeTab === 'gallery' && (
+                <motion.div key="gallery" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-[10px] font-mono uppercase tracking-wider text-slate-600 pb-2 border-b border-slate-800 px-2">
+                    <span>Title</span><span>Category</span><span>Ratio</span><span>Actions</span>
                   </div>
-                </div>
-              ))}
+                  {liveGallery.map((a, i) => (
+                    <motion.div key={a.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                      className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center py-2.5 px-2 rounded-lg hover:bg-slate-800/40 text-xs font-mono transition-all group">
+                      <span className="text-slate-200 truncate">{a.title}</span>
+                      <span className="text-slate-400">{a.category}</span>
+                      <span className="text-slate-500">{a.aspectRatio}</span>
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setGalleryModal({ mode: 'edit', initial: a })} className="p-1 rounded text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all" title="Edit"><Eye size={13} /></button>
+                        <button onClick={() => setDeleteConfirm({ table: 'gallery', id: a.id, label: a.title })} className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Delete"><Trash2 size={13} /></button>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {liveGallery.length === 0 && <div className="py-8 text-center text-xs font-mono text-slate-500">Gallery empty. Click "+ Add gallery".</div>}
+                </motion.div>
+              )}
 
-            {activeTab === 'comments' && (
-              <div className="py-4 text-center text-slate-400 text-xs">
-                All community clinical notes and discussions are moderated & approved.
-              </div>
-            )}
-          </div>
+              {activeTab === 'telemetry' && (
+                <motion.div key="telemetry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <div className="flex items-center gap-2 mb-4 text-[10px] font-mono text-emerald-400">
+                    <Terminal size={12} /><span>LIVE_TELEMETRY.LOG — {telemetryLogs.length} records</span>
+                    <span className="ml-auto text-slate-600">Admin-only view</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+                    {telemetryLogs.length === 0 && <div className="py-6 text-center text-xs font-mono text-slate-500">No telemetry events yet.</div>}
+                    {telemetryLogs.map((log, i) => (
+                      <motion.div key={log.id ?? i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                        className="flex items-start gap-3 px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-800/60 text-[11px] font-mono group hover:border-slate-700 transition-all">
+                        <span className={`shrink-0 uppercase font-bold ${log.log_level === 'error' ? 'text-red-400' : log.log_level === 'warn' ? 'text-yellow-400' : log.log_level === 'debug' ? 'text-slate-500' : 'text-emerald-400'}`}>[{log.log_level}]</span>
+                        <span className="flex-1 text-slate-300 break-all">{log.message}</span>
+                        <span className="shrink-0 text-slate-600 text-[10px]">{log.component}</span>
+                        <button onClick={async () => { const { supabase: sb } = await import('@/lib/supabase'); await sb.from('telemetry_logs').delete().eq('id', log.id); await loadData(); }}
+                          className="shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded text-slate-600 hover:text-red-400 transition-all" title="Delete">
+                          <Trash2 size={11} /></button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
         </div>
-      </div>
+      </motion.div>
+
+      {/* Delete Confirm */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm rounded-2xl border border-red-500/30 bg-[#131B27] p-6 shadow-2xl">
+            <div className="flex items-center gap-2 text-red-400 font-mono text-xs uppercase tracking-wider mb-4"><AlertCircle size={14} /> Confirm Deletion</div>
+            <p className="text-sm text-slate-200 mb-1">Delete <strong className="text-red-300">{deleteConfirm.label}</strong>?</p>
+            <p className="text-xs text-slate-500 font-mono mb-6">This action is irreversible and will remove the record from Supabase.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-xs font-mono text-slate-400 hover:text-slate-200">Cancel</button>
+              <button onClick={handleDelete} className="px-4 py-2 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-300 font-mono text-xs font-bold transition-all">Delete</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {projectModal && <ProjectModal mode={projectModal.mode} initial={projectModal.initial} onClose={() => setProjectModal(null)} onSave={handleSaveProject} />}
+      {essayModal && <EssayModal mode={essayModal.mode} initial={essayModal.initial} onClose={() => setEssayModal(null)} onSave={handleSaveEssay} />}
+      {galleryModal && <GalleryModal mode={galleryModal.mode} initial={galleryModal.initial} onClose={() => setGalleryModal(null)} onSave={handleSaveGallery} />}
     </div>
   );
 }
