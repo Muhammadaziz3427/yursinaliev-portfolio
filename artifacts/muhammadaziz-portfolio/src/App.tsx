@@ -1,17 +1,24 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { createContext, type FormEvent, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowDownRight,
   ArrowLeft,
   ArrowRight,
+  Bookmark,
   Check,
   Copy,
+  Command,
   ExternalLink,
   Github,
+  Heart,
   Instagram,
+  LockKeyhole,
   Linkedin,
   Menu,
   MoveUpRight,
+  Search,
+  ShieldCheck,
+  Terminal,
   X,
 } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,8 +27,32 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import { getAdminSummary, getPortfolio, postGoogleAuth, postLike, postMagicLink, type ActivityItem, type AdminSummary } from '@/lib/portfolio-api';
 
 const queryClient = new QueryClient();
+
+type Language = 'EN' | 'UZ' | 'TR';
+const languageLabels: Record<Language, Record<string, string>> = {
+  EN: {
+    home: 'Home', projects: 'Projects', essays: 'Essays', gallery: 'Gallery', about: 'About',
+    selectedWork: 'See selected work', conversation: 'Start a conversation', archive: 'View the archive',
+  },
+  UZ: {
+    home: 'Bosh sahifa', projects: 'Loyihalar', essays: 'Maqolalar', gallery: 'Galereya', about: 'Men haqimda',
+    selectedWork: 'Tanlangan ishlar', conversation: 'Suhbatni boshlash', archive: 'Arxivni ko‘rish',
+  },
+  TR: {
+    home: 'Ana sayfa', projects: 'Projeler', essays: 'Yazılar', gallery: 'Galeri', about: 'Hakkımda',
+    selectedWork: 'Seçili çalışmaları gör', conversation: 'Bir konuşma başlat', archive: 'Arşivi gör',
+  },
+};
+const LanguageContext = createContext<{ language: Language; setLanguage: (language: Language) => void }>({
+  language: 'EN',
+  setLanguage: () => undefined,
+});
+const SignInContext = createContext<() => void>(() => undefined);
+const useLocale = () => useContext(LanguageContext);
+const useSignIn = () => useContext(SignInContext);
 
 type Project = {
   slug: string;
@@ -182,6 +213,10 @@ function Mark() {
 function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [language, setLanguage] = useState<Language>('EN');
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const labels = languageLabels[language];
   const isActive = (href: string) => href === '/' ? location === '/' : location.startsWith(href);
 
   useEffect(() => {
@@ -190,7 +225,9 @@ function Shell({ children }: { children: ReactNode }) {
   }, [location]);
 
   return (
-    <div className="site-shell">
+    <LanguageContext.Provider value={{ language, setLanguage }}>
+      <SignInContext.Provider value={() => setSignInOpen(true)}>
+      <div className="site-shell">
       <aside className="desktop-rail" aria-label="Primary navigation">
         <Link href="/" className="rail-mark" data-testid="link-brand">
           <Mark />
@@ -198,7 +235,7 @@ function Shell({ children }: { children: ReactNode }) {
         <nav className="rail-nav">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} className={`rail-link ${isActive(item.href) ? 'active' : ''}`} data-testid={`link-nav-${item.label.toLowerCase()}`}>
-              <span>{item.label}</span><span className="rail-index">{item.index}</span>
+              <span>{labels[item.label.toLowerCase()] ?? item.label}</span><span className="rail-index">{item.index}</span>
             </Link>
           ))}
         </nav>
@@ -222,17 +259,101 @@ function Shell({ children }: { children: ReactNode }) {
           <nav className="mobile-menu">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} className={`mobile-nav-link ${isActive(item.href) ? 'active' : ''}`} data-testid={`link-mobile-nav-${item.label.toLowerCase()}`}>
-                <span>{item.label}</span><span className="rail-index">{item.index}</span>
+                <span>{labels[item.label.toLowerCase()] ?? item.label}</span><span className="rail-index">{item.index}</span>
               </Link>
             ))}
           </nav>
         )}
       </header>
 
+      <div className="top-tools">
+        <button type="button" className="tool-button" onClick={() => setCommandOpen(true)} data-testid="button-open-command-palette"><Command size={14} /><span>Search</span><kbd>⌘K</kbd></button>
+        <LanguageSwitcher language={language} onChange={setLanguage} />
+        <button type="button" className="tool-button" onClick={() => setSignInOpen(true)} data-testid="button-open-sign-in"><LockKeyhole size={13} /><span>Sign in</span></button>
+      </div>
       <main className="main-content">{children}</main>
       <SiteFooter />
-    </div>
+      {commandOpen && <CommandPalette onClose={() => setCommandOpen(false)} />}
+      {signInOpen && <AuthDialog onClose={() => setSignInOpen(false)} />}
+      </div>
+      </SignInContext.Provider>
+    </LanguageContext.Provider>
   );
+}
+
+function LanguageSwitcher({ language, onChange }: { language: Language; onChange: (language: Language) => void }) {
+  const [open, setOpen] = useState(false);
+  return <div style={{ position: 'relative' }}>
+    <button type="button" className="tool-button" onClick={() => setOpen((value) => !value)} aria-label="Choose language" data-testid="button-language-switcher">{language}</button>
+    {open && <div className="language-menu" role="menu">{(['EN', 'UZ', 'TR'] as Language[]).map((item) => <button type="button" role="menuitem" className={`language-option ${language === item ? 'active' : ''}`} key={item} onClick={() => { onChange(item); setOpen(false); }} data-testid={`button-language-${item.toLowerCase()}`}>{item} · {item === 'EN' ? 'English' : item === 'UZ' ? 'O‘zbekcha' : 'Türkçe'}</button>)}</div>}
+  </div>;
+}
+
+function CommandPalette({ onClose }: { onClose: () => void }) {
+  const [, setLocation] = useLocation();
+  const [query, setQuery] = useState('');
+  const search = query.trim().toLowerCase();
+  const results = useMemo(() => {
+    const navResults = navItems.map((item) => ({ id: item.href, label: item.label, detail: `Go to ${item.label}`, href: item.href, kind: 'Navigation' }));
+    const projectResults = projects.map((item) => ({ id: item.slug, label: item.name, detail: item.summary, href: `/projects/${item.slug}`, kind: 'Project' }));
+    const essayResults = essays.map((item) => ({ id: item.slug, label: item.title, detail: item.dek, href: `/essays/${item.slug}`, kind: 'Essay' }));
+    const galleryResults = artPieces.map((item) => ({ id: item.id, label: item.title, detail: item.note, href: '/gallery', kind: 'Gallery' }));
+    return [...navResults, ...projectResults, ...essayResults, ...galleryResults].filter((item) => !search || `${item.label} ${item.detail} ${item.kind}`.toLowerCase().includes(search));
+  }, [search]);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+  const choose = (href: string) => {
+    setLocation(href);
+    onClose();
+  };
+  return <div className="command-backdrop" role="presentation" onClick={onClose}>
+    <motion.div className="command-panel" role="dialog" aria-modal="true" aria-label="Command palette" initial={{ opacity: 0, y: -9 }} animate={{ opacity: 1, y: 0 }} onClick={(event) => event.stopPropagation()}>
+      <div className="command-search"><Search size={17} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects, essays, gallery..." aria-label="Search portfolio" data-testid="input-command-search" /><kbd>ESC</kbd></div>
+      {results.length ? <><div className="command-section-label">{search ? 'Matches' : 'Navigate'}</div>{results.map((item) => <button type="button" className="command-result" key={`${item.kind}-${item.id}`} onClick={() => choose(item.href)} data-testid={`button-command-${item.kind.toLowerCase()}-${item.id}`}><Search size={14} /><span>{item.label}</span><small>{item.kind}</small></button>)}</> : <div className="command-empty">No results in this archive. Try a project name or a quieter phrase.</div>}
+      <div className="command-hint">Tip: press <strong>Ctrl K</strong> or <strong>⌘ K</strong> from anywhere to open search.</div>
+    </motion.div>
+  </div>;
+}
+
+function AuthDialog({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('');
+  const [pending, setPending] = useState(false);
+  const submitMagicLink = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPending(true);
+    try {
+      await postMagicLink(email);
+      setStatus('If an account exists, a magic link is on its way.');
+    } catch {
+      setStatus('Sign-in service is unavailable. Please try again shortly.');
+    } finally {
+      setPending(false);
+    }
+  };
+  const google = async () => {
+    setPending(true);
+    try {
+      const response = await postGoogleAuth();
+      if (response.url) window.location.assign(response.url);
+      else setStatus('Google sign-in is ready when the provider is connected.');
+    } catch {
+      setStatus('Google sign-in is unavailable right now.');
+    } finally {
+      setPending(false);
+    }
+  };
+  return <div className="modal-backdrop" role="presentation" onClick={onClose}><motion.div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" initial={{ opacity: 0, scale: .98 }} animate={{ opacity: 1, scale: 1 }} onClick={(event) => event.stopPropagation()}>
+    <button type="button" className="close-modal" onClick={onClose} aria-label="Close sign in" data-testid="button-close-sign-in"><X size={18} /></button>
+    <div className="eyebrow">Private access</div><h2 id="auth-title" className="serif">Keep your place.</h2><p>Sign in to like work, save notes, and return to the parts of this archive that matter to you.</p>
+    <div className="auth-actions"><button type="button" className="button-quiet" onClick={google} disabled={pending} data-testid="button-sign-in-google"><ExternalLink size={14} /> Continue with Google</button><form className="auth-email" onSubmit={submitMagicLink}><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" aria-label="Email for magic link" required data-testid="input-magic-link-email" /><button type="submit" className="button-primary" disabled={pending} data-testid="button-send-magic-link">{pending ? 'Sending' : 'Email link'}</button></form></div>
+    {status && <div className="auth-note" data-testid="status-auth">{status}</div>}
+  </motion.div></div>;
 }
 
 function SiteFooter() {
