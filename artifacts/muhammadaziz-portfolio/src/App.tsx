@@ -1671,27 +1671,47 @@ function AboutPage() {
 // ---------- Auth Gate ----------
 function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: string) => void }) {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleMagicLink = async (e: FormEvent) => {
+  const handlePasswordLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
     setPending(true);
-    setMessage('');
+    setErrorMessage('');
     try {
-      const { supabase: sb } = await import('@/lib/supabase');
-      const { error } = await sb.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined,
-          shouldCreateUser: false,
-        },
+      const { supabase: sb, isAdmin } = await import('@/lib/supabase');
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
-      if (error) throw error;
-      setMessage('✓ Magic link dispatched — check your inbox and click the link to enter.');
-    } catch {
-      setMessage('⚠ Sign-in failed. Ensure this email is an authorised admin account.');
+
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('invalid login credentials') || msg.includes('invalid') || msg.includes('user not found')) {
+          setErrorMessage('Invalid email or password.');
+        } else {
+          setErrorMessage(error.message);
+        }
+        return;
+      }
+
+      if (!data.user) {
+        setErrorMessage('Authentication failed. No user found.');
+        return;
+      }
+
+      // Check admin status in admin_profiles / profiles
+      const admin = await isAdmin();
+      if (admin) {
+        onAuthenticated(data.user.email ?? email);
+      } else {
+        await sb.auth.signOut();
+        setErrorMessage('Access denied: Not an admin account.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Authentication error. Please try again.');
     } finally {
       setPending(false);
     }
@@ -1699,7 +1719,7 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
 
   const handleGoogleAuth = async () => {
     setPending(true);
-    setMessage('');
+    setErrorMessage('');
     try {
       const { supabase: sb } = await import('@/lib/supabase');
       const { error } = await sb.auth.signInWithOAuth({
@@ -1710,7 +1730,7 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
       });
       if (error) throw error;
     } catch {
-      setMessage('⚠ Google OAuth unavailable. Please use Magic Link.');
+      setErrorMessage('Google OAuth unavailable. Please use Email & Password.');
       setPending(false);
     }
   };
@@ -1722,8 +1742,11 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
         if (!mounted) return;
         if (session?.user?.email) {
           const admin = await isAdmin();
-          if (admin) onAuthenticated(session.user.email);
-          else setMessage('⛔ Access denied — this account has no admin privileges.');
+          if (admin) {
+            onAuthenticated(session.user.email);
+          } else {
+            setErrorMessage('Access denied: Not an admin account.');
+          }
         }
       });
       return () => { mounted = false; listener.subscription.unsubscribe(); };
@@ -1748,7 +1771,7 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
             </div>
             <div>
               <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest">Restricted Zone</div>
-              <div className="text-lg font-bold text-slate-100 font-serif">Admin Access</div>
+              <div className="text-lg font-bold text-slate-100 font-serif">Admin Login</div>
             </div>
           </div>
           <Link href="/" className="text-xs font-mono text-slate-500 hover:text-slate-300 transition-colors">
@@ -1757,18 +1780,46 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
         </div>
 
         <p className="text-xs text-slate-400 font-mono mb-6 leading-relaxed border-l-2 border-emerald-500/40 pl-3">
-          This dashboard is protected by Supabase RBAC. Only verified admin accounts may enter.
+          Sign in with your administrator email and password to access the CMS management console.
         </p>
 
-        <form onSubmit={handleMagicLink} className="space-y-3">
-          <input
-            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@yursinaliev.com"
-            className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 font-mono text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 transition-all placeholder:text-slate-600"
-          />
-          <motion.button type="submit" disabled={pending} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-            className="w-full py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(0,245,160,0.1)] disabled:opacity-50">
-            {pending ? 'Dispatching…' : '→ Send Magic Link'}
+        <form onSubmit={handlePasswordLogin} className="space-y-4">
+          <div>
+            <label className="block text-xs font-mono text-slate-400 mb-1.5 uppercase tracking-wider">
+              Admin Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@yursinaliev.com"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 transition-all placeholder:text-slate-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-slate-400 mb-1.5 uppercase tracking-wider">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 font-mono text-xs outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 transition-all placeholder:text-slate-600"
+            />
+          </div>
+
+          <motion.button
+            type="submit"
+            disabled={pending}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="w-full py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(0,245,160,0.1)] disabled:opacity-50 mt-2"
+          >
+            {pending ? 'Authenticating…' : '→ Sign In to CMS'}
           </motion.button>
         </form>
 
@@ -1785,10 +1836,14 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
           </motion.button>
         </div>
 
-        {message && (
-          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-            className={`mt-4 text-xs font-mono px-3 py-2 rounded-lg border ${message.startsWith('✓') ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300' : 'border-red-500/30 bg-red-500/5 text-red-300'}`}>
-            {message}
+        {errorMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 text-xs font-mono px-3 py-2.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-300 flex items-center gap-2"
+          >
+            <AlertCircle size={14} className="text-red-400 shrink-0" />
+            <span>{errorMessage}</span>
           </motion.div>
         )}
 
