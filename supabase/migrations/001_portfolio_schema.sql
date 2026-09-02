@@ -152,7 +152,7 @@ begin
     coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', 'Visitor'),
     new.raw_user_meta_data ->> 'avatar_url',
     case
-      when new.email in ('yursinaliyev@gmail.com', 'admin@yursinaliev.com') then 'admin'::public.profile_role
+      when lower(new.email) in ('yursinaliyevm@gmail.com', 'yursinaliyev@gmail.com', 'admin@yursinaliev.com') then 'admin'::public.profile_role
       else 'user'::public.profile_role
     end
   )

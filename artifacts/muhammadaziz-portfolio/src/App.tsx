@@ -1702,10 +1702,11 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
         return;
       }
 
-      // Check admin status in admin_profiles / profiles
-      const admin = await isAdmin();
+      // Check admin status in admin_profiles / profiles / allowed list
+      const userEmail = (data.user.email || email).trim().toLowerCase();
+      const admin = await isAdmin(userEmail);
       if (admin) {
-        onAuthenticated(data.user.email ?? email);
+        onAuthenticated(userEmail);
       } else {
         await sb.auth.signOut();
         setErrorMessage('Access denied: Not an admin account.');
@@ -1741,9 +1742,10 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
       const { data: listener } = sb.auth.onAuthStateChange(async (_event, session) => {
         if (!mounted) return;
         if (session?.user?.email) {
-          const admin = await isAdmin();
+          const userEmail = session.user.email.trim().toLowerCase();
+          const admin = await isAdmin(userEmail);
           if (admin) {
-            onAuthenticated(session.user.email);
+            onAuthenticated(userEmail);
           } else {
             setErrorMessage('Access denied: Not an admin account.');
           }
@@ -2031,8 +2033,9 @@ function AdminPage() {
           const { isAdmin, getSession } = await import('@/lib/supabase');
           const session = await getSession();
           if (!session) return { authed: false, email: '' };
-          const admin = await isAdmin();
-          return { authed: !!admin, email: session.user?.email ?? '' };
+          const userEmail = (session.user?.email || '').trim().toLowerCase();
+          const admin = await isAdmin(userEmail);
+          return { authed: !!admin, email: userEmail };
         })();
 
         const result = await Promise.race([checkPromise, timeoutPromise]);
