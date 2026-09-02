@@ -1681,12 +1681,36 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
     setMessage('');
     try {
       const { supabase: sb } = await import('@/lib/supabase');
-      const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined,
+          shouldCreateUser: false,
+        },
+      });
       if (error) throw error;
       setMessage('✓ Magic link dispatched — check your inbox and click the link to enter.');
     } catch {
       setMessage('⚠ Sign-in failed. Ensure this email is an authorised admin account.');
     } finally {
+      setPending(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setPending(true);
+    setMessage('');
+    try {
+      const { supabase: sb } = await import('@/lib/supabase');
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined,
+        },
+      });
+      if (error) throw error;
+    } catch {
+      setMessage('⚠ Google OAuth unavailable. Please use Magic Link.');
       setPending(false);
     }
   };
@@ -1717,18 +1741,25 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#131B27]/80 backdrop-blur-2xl p-8 shadow-[0_0_80px_rgba(0,245,160,0.08)]"
       >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,245,160,0.15)]">
-            <ShieldCheck size={20} className="text-emerald-400" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,245,160,0.15)]">
+              <ShieldCheck size={20} className="text-emerald-400" />
+            </div>
+            <div>
+              <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest">Restricted Zone</div>
+              <div className="text-lg font-bold text-slate-100 font-serif">Admin Access</div>
+            </div>
           </div>
-          <div>
-            <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest">Restricted Zone</div>
-            <div className="text-lg font-bold text-slate-100 font-serif">Admin Access</div>
-          </div>
+          <Link href="/" className="text-xs font-mono text-slate-500 hover:text-slate-300 transition-colors">
+            ← Back
+          </Link>
         </div>
+
         <p className="text-xs text-slate-400 font-mono mb-6 leading-relaxed border-l-2 border-emerald-500/40 pl-3">
           This dashboard is protected by Supabase RBAC. Only verified admin accounts may enter.
         </p>
+
         <form onSubmit={handleMagicLink} className="space-y-3">
           <input
             type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
@@ -1740,15 +1771,35 @@ function AdminAuthGate({ onAuthenticated }: { onAuthenticated: (adminEmail: stri
             {pending ? 'Dispatching…' : '→ Send Magic Link'}
           </motion.button>
         </form>
+
+        <div className="mt-3">
+          <motion.button
+            type="button"
+            onClick={handleGoogleAuth}
+            disabled={pending}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="w-full py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+          >
+            <ExternalLink size={13} /> Continue with Google OAuth
+          </motion.button>
+        </div>
+
         {message && (
           <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
             className={`mt-4 text-xs font-mono px-3 py-2 rounded-lg border ${message.startsWith('✓') ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300' : 'border-red-500/30 bg-red-500/5 text-red-300'}`}>
             {message}
           </motion.div>
         )}
-        <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] font-mono text-slate-600 flex items-center gap-2">
-          <Shield size={10} className="text-slate-600" />
-          <span>Supabase Auth · RBAC · RLS Enforced · Zero-Trust</span>
+
+        <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] font-mono text-slate-600 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Shield size={10} className="text-slate-600" />
+            <span>Supabase Auth · RBAC Active</span>
+          </div>
+          <Link href="/" className="text-emerald-400/70 hover:text-emerald-400">
+            Home
+          </Link>
         </div>
       </motion.div>
     </div>
@@ -1913,18 +1964,51 @@ function AdminPage() {
 
   useEffect(() => {
     let cancelled = false;
-    import('@/lib/supabase').then(async ({ isAdmin, getSession }) => {
+    let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const runAuthCheck = async () => {
       try {
-        const session = await getSession();
-        if (!session) { if (!cancelled) setAuthStatus('denied'); return; }
-        const admin = await isAdmin();
+        const timeoutPromise = new Promise<'timeout'>((resolve) => {
+          timeoutTimer = setTimeout(() => resolve('timeout'), 3000);
+        });
+
+        const checkPromise = (async () => {
+          const { isAdmin, getSession } = await import('@/lib/supabase');
+          const session = await getSession();
+          if (!session) return { authed: false, email: '' };
+          const admin = await isAdmin();
+          return { authed: !!admin, email: session.user?.email ?? '' };
+        })();
+
+        const result = await Promise.race([checkPromise, timeoutPromise]);
+
         if (!cancelled) {
-          setAdminEmail(session.user?.email ?? '');
-          setAuthStatus(admin ? 'authed' : 'denied');
+          if (result !== 'timeout' && result.authed) {
+            setAdminEmail(result.email);
+            setAuthStatus('authed');
+          } else {
+            setAuthStatus('denied');
+          }
         }
-      } catch { if (!cancelled) setAuthStatus('denied'); }
-    });
-    return () => { cancelled = true; };
+      } catch (err) {
+        console.warn('Admin verification encountered error, defaulting to login modal:', err);
+        if (!cancelled) {
+          setAuthStatus('denied');
+        }
+      } finally {
+        if (timeoutTimer) clearTimeout(timeoutTimer);
+        if (!cancelled) {
+          setAuthStatus((current) => (current === 'checking' ? 'denied' : current));
+        }
+      }
+    };
+
+    runAuthCheck();
+
+    return () => {
+      cancelled = true;
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+    };
   }, []);
 
   const loadData = useCallback(async () => {
