@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "rootDirectory": "artifacts/muhammadaziz-portfolio",
   "buildCommand": "vite build --config vite.config.ts",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
