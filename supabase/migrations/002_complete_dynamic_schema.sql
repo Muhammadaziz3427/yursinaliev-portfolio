@@ -133,7 +133,7 @@ create table if not exists public.security_notes (
   difficulty text default 'Intermediate', -- 'Beginner', 'Intermediate', 'Advanced'
   tags text[] default '{}',
   code_snippets text,
-  references text[] default '{}',
+  "references" text[] default '{}',
   created_at timestamptz default timezone('utc', now()),
   updated_at timestamptz default timezone('utc', now())
 );
