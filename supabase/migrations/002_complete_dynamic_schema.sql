@@ -1,5 +1,5 @@
 -- ============================================================================
--- YURSINALIEV.UZ: 10-MODULE COMPLETE DYNAMIC DATABASE & STORAGE SCHEMA
+-- YURSINALIEV.UZ: 10-MODULE COMPLETE DYNAMIC DATABASE & STORAGE SCHEMA (RESILIENT)
 -- ============================================================================
 
 -- Extensions
@@ -23,6 +23,10 @@ create table if not exists public.profiles (
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists role public.profile_role not null default 'user';
 
 create table if not exists public.admin_profiles (
   id uuid primary key default gen_random_uuid(),
@@ -54,7 +58,21 @@ create table if not exists public.site_config (
   updated_at timestamptz default timezone('utc', now())
 );
 
--- Seed default site_config if not present
+-- Ensure all columns exist even if table was created previously
+alter table public.site_config add column if not exists name text not null default 'Muhammadaziz Yursinaliyev';
+alter table public.site_config add column if not exists title text default 'Software Engineer & Future Surgeon';
+alter table public.site_config add column if not exists headline text default 'Bridging Medical Precision and Cyber-Security Architecture.';
+alter table public.site_config add column if not exists bio text default 'Passionate technologist dedicated to biomedical innovation, high-assurance security engineering, and surgical science.';
+alter table public.site_config add column if not exists profile_image_url text;
+alter table public.site_config add column if not exists github_url text default 'https://github.com/Muhammadaziz3427';
+alter table public.site_config add column if not exists linkedin_url text default 'https://linkedin.com';
+alter table public.site_config add column if not exists twitter_url text default 'https://twitter.com';
+alter table public.site_config add column if not exists email text default 'yursinaliyevm@gmail.com';
+alter table public.site_config add column if not exists status_text text default 'Tashkent · Dual-Core Practice Active';
+alter table public.site_config add column if not exists theme text default 'dark';
+alter table public.site_config add column if not exists updated_at timestamptz default timezone('utc', now());
+
+-- Seed default site_config if table is empty
 insert into public.site_config (name, title, headline, bio, email, status_text)
 select 'Muhammadaziz Yursinaliyev', 'Software Engineer & Future Surgeon', 'Bridging Medical Precision and Cyber-Security Architecture.', 'Passionate technologist dedicated to biomedical innovation, high-assurance security engineering, and surgical science.', 'yursinaliyevm@gmail.com', 'Tashkent · Dual-Core Practice Active'
 where not exists (select 1 from public.site_config);
@@ -77,6 +95,16 @@ create table if not exists public.essays (
   created_at timestamptz default timezone('utc', now()),
   updated_at timestamptz default timezone('utc', now())
 );
+alter table public.essays add column if not exists content text;
+alter table public.essays add column if not exists content_markdown text;
+alter table public.essays add column if not exists category text default 'Technical';
+alter table public.essays add column if not exists tags text[] default '{}';
+alter table public.essays add column if not exists featured_image_url text;
+alter table public.essays add column if not exists cover_image text;
+alter table public.essays add column if not exists read_time integer default 5;
+alter table public.essays add column if not exists published boolean default true;
+alter table public.essays add column if not exists published_at timestamptz default timezone('utc', now());
+alter table public.essays add column if not exists likes_count integer not null default 0;
 
 -- 4. BOOKS
 create table if not exists public.books (
@@ -85,7 +113,7 @@ create table if not exists public.books (
   author text not null,
   cover_image_url text,
   category text default 'Tech',
-  status text default 'Completed', -- 'Reading', 'Completed', 'Wishlist'
+  status text default 'Completed',
   rating integer default 5 check (rating between 1 and 5),
   review text,
   key_takeaways text[] default '{}',
@@ -114,7 +142,7 @@ create table if not exists public.travels (
 create table if not exists public.games (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  type text default 'Video Game', -- 'Video Game', 'Board Game', 'Hobby', 'Sport'
+  type text default 'Video Game',
   description text,
   playtime text,
   rating integer default 5 check (rating between 1 and 5),
@@ -128,9 +156,9 @@ create table if not exists public.games (
 create table if not exists public.security_notes (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  category text default 'Concept', -- 'Concept', 'Tool', 'Vulnerability', 'Best Practice'
+  category text default 'Concept',
   content text,
-  difficulty text default 'Intermediate', -- 'Beginner', 'Intermediate', 'Advanced'
+  difficulty text default 'Intermediate',
   tags text[] default '{}',
   code_snippets text,
   "references" text[] default '{}',
@@ -142,19 +170,20 @@ create table if not exists public.security_notes (
 create table if not exists public.medical_learning (
   id uuid primary key default gen_random_uuid(),
   topic text not null,
-  system text default 'Cardiovascular', -- 'Cardiovascular', 'Nervous', 'Skeletal', 'Digestive', 'Endocrine'
+  system text default 'Cardiovascular',
   description text,
   diagram_urls text[] default '{}',
   key_facts text[] default '{}',
   clinical_relevance text,
-  status text default 'Learning', -- 'Learning', 'Mastered', 'Interested'
+  status text default 'Learning',
   created_at timestamptz default timezone('utc', now())
 );
 
 -- 9. PROJECTS
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  name text,
+  title text,
   slug text not null unique,
   number text default '01',
   summary text,
@@ -167,22 +196,46 @@ create table if not exists public.projects (
   category text default 'Product',
   hero_image_url text,
   image_url text,
+  cover_image text,
   gallery_urls text[] default '{}',
   tech_stack text[] default '{}',
-  status text default 'Live', -- 'Live', 'In Progress', 'Archived'
+  status text default 'Live',
   live_url text,
   github_url text,
   featured boolean default false,
+  is_featured boolean default false,
   likes_count integer default 0,
   created_at timestamptz default timezone('utc', now()),
   updated_at timestamptz default timezone('utc', now())
 );
+alter table public.projects add column if not exists name text;
+alter table public.projects add column if not exists title text;
+alter table public.projects add column if not exists number text default '01';
+alter table public.projects add column if not exists summary text;
+alter table public.projects add column if not exists description text;
+alter table public.projects add column if not exists problem text;
+alter table public.projects add column if not exists solution text;
+alter table public.projects add column if not exists result text;
+alter table public.projects add column if not exists year text default '2024';
+alter table public.projects add column if not exists role text;
+alter table public.projects add column if not exists category text default 'Product';
+alter table public.projects add column if not exists hero_image_url text;
+alter table public.projects add column if not exists image_url text;
+alter table public.projects add column if not exists cover_image text;
+alter table public.projects add column if not exists gallery_urls text[] default '{}';
+alter table public.projects add column if not exists tech_stack text[] default '{}';
+alter table public.projects add column if not exists status text default 'Live';
+alter table public.projects add column if not exists live_url text;
+alter table public.projects add column if not exists github_url text;
+alter table public.projects add column if not exists featured boolean default false;
+alter table public.projects add column if not exists is_featured boolean default false;
+alter table public.projects add column if not exists likes_count integer default 0;
 
 -- 10. QUICK TIPS
 create table if not exists public.quick_tips (
   id uuid primary key default gen_random_uuid(),
   insight text not null,
-  category text default 'Tech', -- 'Tech', 'Life', 'Medicine', 'Philosophy'
+  category text default 'Tech',
   created_at timestamptz default timezone('utc', now())
 );
 
@@ -201,6 +254,11 @@ create table if not exists public.gallery (
   created_at timestamptz default timezone('utc', now()),
   updated_at timestamptz default timezone('utc', now())
 );
+alter table public.gallery add column if not exists note text;
+alter table public.gallery add column if not exists details text[] default '{}';
+alter table public.gallery add column if not exists description text;
+alter table public.gallery add column if not exists image_alt text;
+alter table public.gallery add column if not exists "order" integer default 0;
 
 -- 12. TELEMETRY & ACTIVITY
 create table if not exists public.telemetry_logs (
