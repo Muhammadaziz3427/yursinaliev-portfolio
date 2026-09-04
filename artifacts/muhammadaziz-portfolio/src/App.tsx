@@ -14,6 +14,7 @@ import {
   Instagram,
   LockKeyhole,
   Linkedin,
+  Twitter,
   Menu,
   MoveUpRight,
   Search,
@@ -46,7 +47,8 @@ import {
   MapPin,
   Calendar,
   Activity,
-  RefreshCw
+  RefreshCw,
+  Quote
 } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
@@ -60,6 +62,19 @@ import GamesPage from '@/pages/games';
 import SecurityPage from '@/pages/security';
 import MedicalPage from '@/pages/medical';
 import TipsPage from '@/pages/tips';
+import {
+  ProjectModal,
+  EssayModal,
+  BookModal,
+  SecurityNoteModal,
+  QuickTipModal
+} from '@/components/Admin/AdminModals';
+import {
+  TravelModal,
+  GameModal,
+  MedicalLearningModal,
+  GalleryModal
+} from '@/components/Admin/AdminModalsPart2';
 import {
   type SiteConfig,
   type Essay,
@@ -358,15 +373,23 @@ const navItems = [
 // ==========================================
 // 3. CORE SHELL & GLOBAL NAVIGATION
 // ==========================================
-function BrandMark() {
+function BrandMark({ config }: { config: SiteConfig }) {
+  const initials = config.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'MY';
+
   return (
     <div className="flex items-center gap-3">
       <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-400/40 flex items-center justify-center text-emerald-400 font-mono text-xs font-bold shadow-[0_0_15px_rgba(0,245,160,0.2)]">
-        MY
+        {initials}
       </div>
       <div>
         <div className="text-sm font-semibold tracking-tight text-slate-100 flex items-center gap-1.5">
-          Muhammadaziz <span className="text-emerald-400 font-mono text-[10px] px-1 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">v3.0</span>
+          {config.name.split(' ')[0] || 'Muhammadaziz'}{' '}
+          <span className="text-emerald-400 font-mono text-[10px] px-1 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">v3.0</span>
         </div>
         <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
           <Stethoscope size={10} className="text-cyan-400" />
@@ -385,9 +408,16 @@ function SiteShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [language, setLanguage] = useState<Language>('EN');
   const [commandOpen, setCommandOpen] = useState(false);
+  const [siteConfig, setSiteConfig] = useState<SiteConfig>(defaultSiteConfig);
 
   const t = (key: string) => translations[language][key] ?? key;
   const isActive = (href: string) => (href === '/' ? location === '/' : location.startsWith(href));
+
+  useEffect(() => {
+    getSiteConfig().then((cfg) => {
+      if (cfg) setSiteConfig(cfg);
+    });
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
@@ -411,7 +441,7 @@ function SiteShell({ children }: { children: ReactNode }) {
         {/* Desktop Left Rail Navigation */}
         <aside className="desktop-rail hidden md:flex fixed top-0 left-0 bottom-0 w-64 border-r border-slate-800/80 bg-[#0B0F17]/90 backdrop-blur-2xl flex-col p-6 z-40 overflow-y-auto" aria-label="Main Navigation">
           <Link href="/" className="mb-8 block group">
-            <BrandMark />
+            <BrandMark config={siteConfig} />
           </Link>
 
           <nav className="flex flex-col gap-1">
@@ -443,23 +473,29 @@ function SiteShell({ children }: { children: ReactNode }) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>Tashkent · Dual-Core Practice</span>
+              <span>{siteConfig.status_text || 'Tashkent · Dual-Core Practice'}</span>
             </div>
 
             <div className="flex items-center gap-3 text-slate-400">
-              <a href="https://github.com/Muhammadaziz3427" target="_blank" rel="noreferrer" className="hover:text-emerald-400 transition-colors" title="GitHub">
-                <Github size={15} />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors" title="LinkedIn">
-                <Linkedin size={15} />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-pink-400 transition-colors" title="Instagram">
-                <Instagram size={15} />
-              </a>
+              {siteConfig.github_url && (
+                <a href={siteConfig.github_url} target="_blank" rel="noreferrer" className="hover:text-emerald-400 transition-colors" title="GitHub">
+                  <Github size={15} />
+                </a>
+              )}
+              {siteConfig.linkedin_url && (
+                <a href={siteConfig.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors" title="LinkedIn">
+                  <Linkedin size={15} />
+                </a>
+              )}
+              {siteConfig.twitter_url && (
+                <a href={siteConfig.twitter_url} target="_blank" rel="noreferrer" className="hover:text-pink-400 transition-colors" title="Twitter/X">
+                  <Twitter size={15} />
+                </a>
+              )}
             </div>
 
             <div className="text-[10px] font-mono text-slate-500">
-              yursinaliev.uz · © 2024—26
+              {siteConfig.name} · © 2024—26
             </div>
           </div>
         </aside>
@@ -467,7 +503,7 @@ function SiteShell({ children }: { children: ReactNode }) {
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0B0F17]/95 backdrop-blur-xl sticky top-0 z-40">
           <Link href="/">
-            <BrandMark />
+            <BrandMark config={siteConfig} />
           </Link>
           <div className="flex items-center gap-2">
             <button
@@ -757,6 +793,7 @@ function HomePage() {
   });
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>(fallbackProjects);
   const [latestEssays, setLatestEssays] = useState<Essay[]>(fallbackEssays);
+  const [latestTips, setLatestTips] = useState<QuickTip[]>([]);
 
   useEffect(() => {
     getSiteConfig().then((cfg) => {
@@ -788,6 +825,7 @@ function HomePage() {
 
       if (p.status === 'fulfilled' && p.value.length > 0) setFeaturedProjects(p.value.slice(0, 2));
       if (e.status === 'fulfilled' && e.value.length > 0) setLatestEssays(e.value.slice(0, 2));
+      if (tp.status === 'fulfilled' && tp.value.length > 0) setLatestTips(tp.value.slice(0, 2));
     });
   }, []);
 
@@ -1352,7 +1390,7 @@ function AboutPage() {
 }
 
 // ==========================================
-// 11. ADMIN CMS (10-MODULE CONSOLE & MODALS)
+// 11. ADMIN CMS (10-MODULE CONSOLE)
 // ==========================================
 type ModalMode = 'create' | 'edit';
 
@@ -1821,6 +1859,24 @@ function AdminPage() {
                 className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
               />
             </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">GitHub URL</label>
+              <input
+                value={liveConfig.github_url || ''}
+                onChange={(e) => setLiveConfig({ ...liveConfig, github_url: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">LinkedIn URL</label>
+              <input
+                value={liveConfig.linkedin_url || ''}
+                onChange={(e) => setLiveConfig({ ...liveConfig, linkedin_url: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+              />
+            </div>
           </div>
         </form>
       )}
@@ -1831,12 +1887,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Projects ({liveProjects.length})</h2>
             <button
-              onClick={() => {
-                const name = prompt('Project Name:');
-                if (!name) return;
-                const summary = prompt('Summary:') || '';
-                createProject({ name, summary, category: 'Product', techStack: ['React', 'TypeScript'] }).then(loadData);
-              }}
+              onClick={() => setProjectModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Project
@@ -1852,10 +1903,7 @@ function AdminPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      const newName = prompt('Update Name:', p.name);
-                      if (newName) updateProject(p.id || p.slug, { name: newName }).then(loadData);
-                    }}
+                    onClick={() => setProjectModal({ mode: 'edit', initial: p })}
                     className="p-1.5 text-slate-400 hover:text-emerald-300"
                   >
                     <Edit3 size={14} />
@@ -1879,12 +1927,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Essays ({liveEssays.length})</h2>
             <button
-              onClick={() => {
-                const title = prompt('Essay Title:');
-                if (!title) return;
-                const dek = prompt('Excerpt / Subtitle:') || '';
-                createEssay({ title, dek, category: 'Tech', read: '5 min read' }).then(loadData);
-              }}
+              onClick={() => setEssayModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Essay
@@ -1900,10 +1943,7 @@ function AdminPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      const newTitle = prompt('Update Essay Title:', e.title);
-                      if (newTitle) updateEssay(e.id || e.slug, { title: newTitle }).then(loadData);
-                    }}
+                    onClick={() => setEssayModal({ mode: 'edit', initial: e })}
                     className="p-1.5 text-slate-400 hover:text-cyan-300"
                   >
                     <Edit3 size={14} />
@@ -1927,12 +1967,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Books ({liveBooks.length})</h2>
             <button
-              onClick={() => {
-                const title = prompt('Book Title:');
-                if (!title) return;
-                const author = prompt('Author:') || 'Unknown';
-                createBook({ title, author, category: 'Tech', status: 'Completed', rating: 5 }).then(loadData);
-              }}
+              onClick={() => setBookModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Book
@@ -1948,11 +1983,7 @@ function AdminPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      if (!b.id) return;
-                      const newTitle = prompt('Update Title:', b.title);
-                      if (newTitle) updateBook(b.id, { title: newTitle }).then(loadData);
-                    }}
+                    onClick={() => setBookModal({ mode: 'edit', initial: b })}
                     className="p-1.5 text-slate-400 hover:text-amber-300"
                   >
                     <Edit3 size={14} />
@@ -1976,12 +2007,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Travels ({liveTravels.length})</h2>
             <button
-              onClick={() => {
-                const trip_title = prompt('Trip Title:');
-                if (!trip_title) return;
-                const location = prompt('Location (City, Country):') || '';
-                createTravel({ trip_title, location }).then(loadData);
-              }}
+              onClick={() => setTravelModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Trip
@@ -1996,6 +2022,12 @@ function AdminPage() {
                   <div className="text-slate-400 text-[11px]">{tr.location}</div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setTravelModal({ mode: 'edit', initial: tr })}
+                    className="p-1.5 text-slate-400 hover:text-teal-300"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => tr.id && setDeleteConfirm({ table: 'travels', id: tr.id, label: tr.trip_title })}
                     className="p-1.5 text-slate-400 hover:text-red-400"
@@ -2015,11 +2047,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Games & Hobbies ({liveGames.length})</h2>
             <button
-              onClick={() => {
-                const name = prompt('Game / Hobby Name:');
-                if (!name) return;
-                createGame({ name, type: 'Video Game', rating: 5 }).then(loadData);
-              }}
+              onClick={() => setGameModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-500/20 border border-pink-500/40 text-pink-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Game
@@ -2034,6 +2062,12 @@ function AdminPage() {
                   <div className="text-slate-400 text-[11px]">{g.type} · {g.rating}★</div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setGameModal({ mode: 'edit', initial: g })}
+                    className="p-1.5 text-slate-400 hover:text-pink-300"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => g.id && setDeleteConfirm({ table: 'games', id: g.id, label: g.name })}
                     className="p-1.5 text-slate-400 hover:text-red-400"
@@ -2053,12 +2087,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Security Notes ({liveSecurity.length})</h2>
             <button
-              onClick={() => {
-                const title = prompt('Security Note Title:');
-                if (!title) return;
-                const content = prompt('Content:') || '';
-                createSecurityNote({ title, category: 'Concept', difficulty: 'Intermediate', content }).then(loadData);
-              }}
+              onClick={() => setSecurityModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Note
@@ -2073,6 +2102,12 @@ function AdminPage() {
                   <div className="text-slate-400 text-[11px]">{s.category} · {s.difficulty}</div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSecurityModal({ mode: 'edit', initial: s })}
+                    className="p-1.5 text-slate-400 hover:text-emerald-300"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => s.id && setDeleteConfirm({ table: 'security_notes', id: s.id, label: s.title })}
                     className="p-1.5 text-slate-400 hover:text-red-400"
@@ -2092,12 +2127,8 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Medical Learning ({liveMedical.length})</h2>
             <button
-              onClick={() => {
-                const topic = prompt('Anatomy Topic:');
-                if (!topic) return;
-                createMedicalLearning({ topic, system: 'Cardiovascular', status: 'Learning' }).then(loadData);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold"
+              onClick={() => setMedicalModal({ mode: 'create' })}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Topic
             </button>
@@ -2111,6 +2142,12 @@ function AdminPage() {
                   <div className="text-slate-400 text-[11px]">{m.system} · {m.status}</div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setMedicalModal({ mode: 'edit', initial: m })}
+                    className="p-1.5 text-slate-400 hover:text-blue-300"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => m.id && setDeleteConfirm({ table: 'medical_learning', id: m.id, label: m.topic })}
                     className="p-1.5 text-slate-400 hover:text-red-400"
@@ -2130,11 +2167,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Quick Tips ({liveTips.length})</h2>
             <button
-              onClick={() => {
-                const insight = prompt('Quick Tip / Insight:');
-                if (!insight) return;
-                createQuickTip({ insight, category: 'Tech' }).then(loadData);
-              }}
+              onClick={() => setTipModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Tip
@@ -2149,6 +2182,12 @@ function AdminPage() {
                   <div className="text-slate-400 text-[11px]">{tip.category}</div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setTipModal({ mode: 'edit', initial: tip })}
+                    className="p-1.5 text-slate-400 hover:text-amber-300"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button
                     onClick={() => tip.id && setDeleteConfirm({ table: 'quick_tips', id: tip.id, label: tip.insight })}
                     className="p-1.5 text-slate-400 hover:text-red-400"
@@ -2168,11 +2207,7 @@ function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-100">Gallery Plates ({liveGallery.length})</h2>
             <button
-              onClick={() => {
-                const title = prompt('Gallery Plate Title:');
-                if (!title) return;
-                createGalleryItem({ title, category: 'Anatomy', image_url: '' }).then(loadData);
-              }}
+              onClick={() => setGalleryModal({ mode: 'create' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
             >
               <Plus size={13} /> Add Plate
@@ -2188,6 +2223,12 @@ function AdminPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => setGalleryModal({ mode: 'edit', initial: gal })}
+                    className="p-1.5 text-slate-400 hover:text-emerald-300"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                  <button
                     onClick={() => gal.id && setDeleteConfirm({ table: 'gallery', id: gal.id, label: gal.title })}
                     className="p-1.5 text-slate-400 hover:text-red-400"
                   >
@@ -2198,6 +2239,128 @@ function AdminPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Dynamic Interactive Modals */}
+      {projectModal && (
+        <ProjectModal
+          mode={projectModal.mode}
+          initial={projectModal.initial}
+          onClose={() => setProjectModal(null)}
+          onSave={async (data) => {
+            if (projectModal.mode === 'create') await createProject(data as any);
+            else if (projectModal.initial?.id || projectModal.initial?.slug) {
+              await updateProject(projectModal.initial.id || projectModal.initial.slug!, data);
+            }
+            await loadData();
+          }}
+        />
+      )}
+
+      {essayModal && (
+        <EssayModal
+          mode={essayModal.mode}
+          initial={essayModal.initial}
+          onClose={() => setEssayModal(null)}
+          onSave={async (data) => {
+            if (essayModal.mode === 'create') await createEssay(data as any);
+            else if (essayModal.initial?.id || essayModal.initial?.slug) {
+              await updateEssay(essayModal.initial.id || essayModal.initial.slug!, data);
+            }
+            await loadData();
+          }}
+        />
+      )}
+
+      {bookModal && (
+        <BookModal
+          mode={bookModal.mode}
+          initial={bookModal.initial}
+          onClose={() => setBookModal(null)}
+          onSave={async (data) => {
+            if (bookModal.mode === 'create') await createBook(data as any);
+            else if (bookModal.initial?.id) await updateBook(bookModal.initial.id, data);
+            await loadData();
+          }}
+        />
+      )}
+
+      {travelModal && (
+        <TravelModal
+          mode={travelModal.mode}
+          initial={travelModal.initial}
+          onClose={() => setTravelModal(null)}
+          onSave={async (data) => {
+            if (travelModal.mode === 'create') await createTravel(data as any);
+            else if (travelModal.initial?.id) await updateTravel(travelModal.initial.id, data);
+            await loadData();
+          }}
+        />
+      )}
+
+      {gameModal && (
+        <GameModal
+          mode={gameModal.mode}
+          initial={gameModal.initial}
+          onClose={() => setGameModal(null)}
+          onSave={async (data) => {
+            if (gameModal.mode === 'create') await createGame(data as any);
+            else if (gameModal.initial?.id) await updateGame(gameModal.initial.id, data);
+            await loadData();
+          }}
+        />
+      )}
+
+      {securityModal && (
+        <SecurityNoteModal
+          mode={securityModal.mode}
+          initial={securityModal.initial}
+          onClose={() => setSecurityModal(null)}
+          onSave={async (data) => {
+            if (securityModal.mode === 'create') await createSecurityNote(data as any);
+            else if (securityModal.initial?.id) await updateSecurityNote(securityModal.initial.id, data);
+            await loadData();
+          }}
+        />
+      )}
+
+      {medicalModal && (
+        <MedicalLearningModal
+          mode={medicalModal.mode}
+          initial={medicalModal.initial}
+          onClose={() => setMedicalModal(null)}
+          onSave={async (data) => {
+            if (medicalModal.mode === 'create') await createMedicalLearning(data as any);
+            else if (medicalModal.initial?.id) await updateMedicalLearning(medicalModal.initial.id, data);
+            await loadData();
+          }}
+        />
+      )}
+
+      {tipModal && (
+        <QuickTipModal
+          mode={tipModal.mode}
+          initial={tipModal.initial}
+          onClose={() => setTipModal(null)}
+          onSave={async (data) => {
+            if (tipModal.mode === 'create') await createQuickTip(data as any);
+            else if (tipModal.initial?.id) await updateQuickTip(tipModal.initial.id, data);
+            await loadData();
+          }}
+        />
+      )}
+
+      {galleryModal && (
+        <GalleryModal
+          mode={galleryModal.mode}
+          initial={galleryModal.initial}
+          onClose={() => setGalleryModal(null)}
+          onSave={async (data) => {
+            if (galleryModal.mode === 'create') await createGalleryItem(data as any);
+            else if (galleryModal.initial?.id) await updateGalleryItem(galleryModal.initial.id, data);
+            await loadData();
+          }}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
