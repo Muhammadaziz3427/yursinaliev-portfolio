@@ -814,3 +814,370 @@ export function QuickTipModal({
     </div>
   );
 }
+
+// ----------------------------------------------------------------------
+// 10. SITE CONFIG EDITOR (FULL ADVANCED SETTINGS)
+// ----------------------------------------------------------------------
+export function SiteConfigModal({
+  initial,
+  onClose,
+  onSave,
+}: {
+  initial: Partial<import('@/lib/cms-api').SiteConfig>;
+  onClose: () => void;
+  onSave: (data: Partial<import('@/lib/cms-api').SiteConfig> & { imageFile?: File; resumeFile?: File }) => Promise<void>;
+}) {
+  const [form, setForm] = useState<Partial<import('@/lib/cms-api').SiteConfig> & { imageFile?: File; resumeFile?: File }>({
+    name: 'Muhammadaziz Yursinaliyev',
+    title: 'Software Engineer & Future Surgeon',
+    headline: 'Bridging Medical Precision and Cyber-Security Architecture.',
+    bio: 'Passionate technologist dedicated to biomedical innovation, high-assurance security engineering, and surgical science.',
+    quote: 'The codebase and the patient both demand the same standard: careful observation before action, and respect for the human on the other side.',
+    status_text: 'Tashkent · Dual-Core Practice Active',
+    available_for_work: true,
+    email: 'yursinaliyevm@gmail.com',
+    github_url: 'https://github.com/Muhammadaziz3427',
+    linkedin_url: 'https://linkedin.com',
+    twitter_url: 'https://twitter.com',
+    telegram_url: 'https://t.me/yursinaliev',
+    instagram_url: '',
+    youtube_url: '',
+    skills: [
+      'Next.js 14 / React',
+      'TypeScript',
+      'PostgreSQL / Supabase RLS',
+      'Zero-Trust Architecture',
+      'Web Crypto & HKDF',
+      'Surgical Anatomy Dissection',
+      'Microvascular Prep',
+      'Distributed Systems',
+      'Calm Product Engineering'
+    ],
+    timeline: [
+      {
+        year: '2024—Present',
+        title: 'Clinical & Biomedical Science',
+        organization: 'Tashkent Medical Academy',
+        description: 'Studying clinical medicine, cardiovascular physiology, and surgical anatomy with focus on precision procedures.'
+      },
+      {
+        year: '2023—2024',
+        title: 'Lead Software Architect',
+        organization: 'Kitobcha & Systems',
+        description: 'Engineered offline-first reading rituals, zero-trust token vaults, and high-performance React architectures.'
+      },
+      {
+        year: '2022—2023',
+        title: 'Cybersecurity & Full-Stack Engineer',
+        organization: 'Independent Labs',
+        description: 'Researched cryptographic key derivation, defensive zero-trust architectures, and spatial map engines.'
+      }
+    ],
+    ...initial,
+  });
+
+  const [skillsInput, setSkillsInput] = useState((form.skills || []).join(', '));
+  const [newMilestoneYear, setNewMilestoneYear] = useState('');
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [newMilestoneOrg, setNewMilestoneOrg] = useState('');
+  const [newMilestoneDesc, setNewMilestoneDesc] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const addMilestone = () => {
+    if (!newMilestoneTitle || !newMilestoneYear) return;
+    const currentTimeline = form.timeline || [];
+    setForm({
+      ...form,
+      timeline: [
+        ...currentTimeline,
+        {
+          year: newMilestoneYear,
+          title: newMilestoneTitle,
+          organization: newMilestoneOrg,
+          description: newMilestoneDesc,
+        },
+      ],
+    });
+    setNewMilestoneYear('');
+    setNewMilestoneTitle('');
+    setNewMilestoneOrg('');
+    setNewMilestoneDesc('');
+  };
+
+  const removeMilestone = (index: number) => {
+    const currentTimeline = [...(form.timeline || [])];
+    currentTimeline.splice(index, 1);
+    setForm({ ...form, timeline: currentTimeline });
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      const skills = skillsInput.split(',').map((s) => s.trim()).filter(Boolean);
+      await onSave({ ...form, skills });
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update site settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-emerald-500/30 bg-[#131B27] p-6 space-y-6 shadow-2xl font-mono"
+      >
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h2 className="text-sm font-bold text-emerald-400 uppercase flex items-center gap-2">
+            <span>⚙️ Global Identity & Site Configuration</span>
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-6 text-xs">
+          {/* Identity */}
+          <div className="space-y-3">
+            <div className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">1. Profile & Bio</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 mb-1">Full Name *</label>
+                <input
+                  required
+                  value={form.name || ''}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Professional Title *</label>
+                <input
+                  required
+                  value={form.title || ''}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">Hero Lead / Subtitle</label>
+              <input
+                value={form.headline || ''}
+                onChange={(e) => setForm({ ...form, headline: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">Full Bio</label>
+              <textarea
+                rows={3}
+                value={form.bio || ''}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">Philosophy Quote</label>
+              <textarea
+                rows={2}
+                value={form.quote || ''}
+                onChange={(e) => setForm({ ...form, quote: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400 resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Availability & Status */}
+          <div className="space-y-3 pt-3 border-t border-slate-800">
+            <div className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">2. Status & Availability</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 mb-1">Live Status Badge Text</label>
+                <input
+                  value={form.status_text || ''}
+                  onChange={(e) => setForm({ ...form, status_text: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-5">
+                <input
+                  type="checkbox"
+                  id="availCheck"
+                  checked={!!form.available_for_work}
+                  onChange={(e) => setForm({ ...form, available_for_work: e.target.checked })}
+                  className="w-4 h-4 rounded text-emerald-500 accent-emerald-500"
+                />
+                <label htmlFor="availCheck" className="text-slate-300 select-none cursor-pointer">
+                  Available for High-Impact Collaborations
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Skills Management */}
+          <div className="space-y-3 pt-3 border-t border-slate-800">
+            <div className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">3. Dynamic Skills List</div>
+            <div>
+              <label className="block text-slate-400 mb-1">Skills (comma separated)</label>
+              <input
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                placeholder="TypeScript, Next.js 14, Supabase RLS, Surgical Anatomy..."
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+              />
+            </div>
+          </div>
+
+          {/* Timeline Milestones */}
+          <div className="space-y-3 pt-3 border-t border-slate-800">
+            <div className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">4. Experience & Milestones</div>
+            <div className="space-y-2">
+              {(form.timeline || []).map((m, idx) => (
+                <div key={idx} className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-start justify-between">
+                  <div>
+                    <div className="font-bold text-slate-200">
+                      {m.title} <span className="text-emerald-400 font-normal">({m.year})</span>
+                    </div>
+                    <div className="text-slate-400 text-[11px]">{m.organization}</div>
+                    <div className="text-slate-500 text-[10px] mt-1">{m.description}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeMilestone(idx)}
+                    className="text-slate-500 hover:text-red-400 p-1"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80 space-y-2">
+              <div className="font-bold text-slate-300 text-[11px]">+ Add New Milestone</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input
+                  placeholder="Year (e.g. 2024—Present)"
+                  value={newMilestoneYear}
+                  onChange={(e) => setNewMilestoneYear(e.target.value)}
+                  className="px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs"
+                />
+                <input
+                  placeholder="Title (e.g. Surgical Resident)"
+                  value={newMilestoneTitle}
+                  onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                  className="px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs"
+                />
+                <input
+                  placeholder="Org (e.g. Clinic / Lab)"
+                  value={newMilestoneOrg}
+                  onChange={(e) => setNewMilestoneOrg(e.target.value)}
+                  className="px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs"
+                />
+              </div>
+              <textarea
+                placeholder="Description of responsibility and impact..."
+                rows={2}
+                value={newMilestoneDesc}
+                onChange={(e) => setNewMilestoneDesc(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs resize-none"
+              />
+              <button
+                type="button"
+                onClick={addMilestone}
+                className="px-3 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold"
+              >
+                Add Milestone
+              </button>
+            </div>
+          </div>
+
+          {/* Socials & Media Uploads */}
+          <div className="space-y-3 pt-3 border-t border-slate-800">
+            <div className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">5. Social Links & File Uploads</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 mb-1">GitHub URL</label>
+                <input
+                  value={form.github_url || ''}
+                  onChange={(e) => setForm({ ...form, github_url: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">LinkedIn URL</label>
+                <input
+                  value={form.linkedin_url || ''}
+                  onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Twitter / X URL</label>
+                <input
+                  value={form.twitter_url || ''}
+                  onChange={(e) => setForm({ ...form, twitter_url: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Telegram URL</label>
+                <input
+                  value={form.telegram_url || ''}
+                  onChange={(e) => setForm({ ...form, telegram_url: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <div>
+                <label className="block text-slate-400 mb-1">Profile Photo Upload</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setForm({ ...form, imageFile: e.target.files?.[0] })}
+                  className="w-full text-slate-400 file:mr-3 file:px-3 file:py-1 file:rounded file:bg-slate-800 file:text-emerald-400 file:border file:border-emerald-500/30 file:text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Resume / CV PDF Upload</label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setForm({ ...form, resumeFile: e.target.files?.[0] })}
+                  className="w-full text-slate-400 file:mr-3 file:px-3 file:py-1 file:rounded file:bg-slate-800 file:text-emerald-400 file:border file:border-emerald-500/30 file:text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && <div className="p-2.5 rounded bg-red-500/10 border border-red-500/30 text-red-300">{error}</div>}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-400 hover:text-slate-200">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold hover:bg-emerald-500/30 disabled:opacity-50"
+            >
+              {saving ? 'Saving Changes…' : 'Save Site Settings'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}

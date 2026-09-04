@@ -1,4 +1,4 @@
-import { createContext, useCallback, type FormEvent, type ReactNode, useContext, useEffect, useMemo, useState, useRef } from 'react';
+import { createContext, useCallback, type FormEvent, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowDownRight,
@@ -48,7 +48,12 @@ import {
   Calendar,
   Activity,
   RefreshCw,
-  Quote
+  Quote,
+  FileText,
+  Briefcase,
+  GraduationCap,
+  Download,
+  Share2
 } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
@@ -67,7 +72,8 @@ import {
   EssayModal,
   BookModal,
   SecurityNoteModal,
-  QuickTipModal
+  QuickTipModal,
+  SiteConfigModal
 } from '@/components/Admin/AdminModals';
 import {
   TravelModal,
@@ -77,6 +83,8 @@ import {
 } from '@/components/Admin/AdminModalsPart2';
 import {
   type SiteConfig,
+  type TimelineMilestone,
+  type CustomSocialLink,
   type Essay,
   type Book,
   type Travel,
@@ -130,8 +138,8 @@ import {
 
 const queryClient = new QueryClient();
 
-// Re-export types for backward compatibility
-export type { SiteConfig, Essay, Book, Travel, Game, SecurityNote, MedicalLearning, Project, QuickTip, ArtPiece };
+// Re-export types
+export type { SiteConfig, TimelineMilestone, CustomSocialLink, Essay, Book, Travel, Game, SecurityNote, MedicalLearning, Project, QuickTip, ArtPiece };
 
 // ==========================================
 // 1. I18N & CONTEXT DEFINITIONS
@@ -160,7 +168,9 @@ const translations: Record<Language, Record<string, string>> = {
     searchPlaceholder: 'Search across 10 dynamic modules (⌘K)...',
     verifiedAdmin: 'Admin Access Verified',
     copied: 'Copied to clipboard',
-    copyEmail: 'Copy Email'
+    copyEmail: 'Copy Email',
+    downloadResume: 'Download Resume / CV',
+    availableBadge: 'Available for Collaborations'
   },
   UZ: {
     home: 'Bosh sahifa',
@@ -183,7 +193,9 @@ const translations: Record<Language, Record<string, string>> = {
     searchPlaceholder: 'Barcha 10 ta bo‘limdan qidirish (⌘K)...',
     verifiedAdmin: 'Administrator ruxsati tasdiqlandi',
     copied: 'Xotiraga nusxalandi',
-    copyEmail: 'Emailni nusxalash'
+    copyEmail: 'Emailni nusxalash',
+    downloadResume: 'Rezyume / CV yuklab olish',
+    availableBadge: 'Hamkorlik uchun ochiq'
   },
   TR: {
     home: 'Ana Sayfa',
@@ -206,7 +218,9 @@ const translations: Record<Language, Record<string, string>> = {
     searchPlaceholder: 'Tüm modüllerde ara (⌘K)...',
     verifiedAdmin: 'Yönetici Erişimi Doğrulandı',
     copied: 'Panoya kopyalandı',
-    copyEmail: 'E-postayı kopyala'
+    copyEmail: 'E-postayı kopyala',
+    downloadResume: 'Özgeçmiş / CV İndir',
+    availableBadge: 'İşbirliklerine Açık'
   },
 };
 
@@ -226,11 +240,45 @@ export const defaultSiteConfig: SiteConfig = {
   title: 'Software Engineer & Future Surgeon',
   headline: 'Bridging Medical Precision and Cyber-Security Architecture.',
   bio: 'Passionate technologist dedicated to biomedical innovation, high-assurance zero-trust security engineering, and surgical science. Based in Tashkent, Uzbekistan.',
+  quote: 'The codebase and the patient both demand the same standard: careful observation before action, and respect for the human on the other side.',
   status_text: 'Tashkent · Dual-Core Practice Active',
+  available_for_work: true,
   email: 'yursinaliyevm@gmail.com',
   github_url: 'https://github.com/Muhammadaziz3427',
   linkedin_url: 'https://linkedin.com',
   twitter_url: 'https://twitter.com',
+  telegram_url: 'https://t.me/yursinaliev',
+  skills: [
+    'Next.js 14 / React',
+    'TypeScript',
+    'PostgreSQL / Supabase RLS',
+    'Zero-Trust Architecture',
+    'Web Crypto & HKDF',
+    'Surgical Anatomy Dissection',
+    'Microvascular Prep',
+    'Distributed Systems',
+    'Calm Product Engineering',
+  ],
+  timeline: [
+    {
+      year: '2024—Present',
+      title: 'Clinical & Biomedical Science',
+      organization: 'Tashkent Medical Academy',
+      description: 'Studying clinical medicine, cardiovascular physiology, and surgical anatomy with focus on precision procedures.'
+    },
+    {
+      year: '2023—2024',
+      title: 'Lead Software Architect',
+      organization: 'Kitobcha & Systems',
+      description: 'Engineered offline-first reading rituals, zero-trust token vaults, and high-performance React architectures.'
+    },
+    {
+      year: '2022—2023',
+      title: 'Cybersecurity & Full-Stack Engineer',
+      organization: 'Independent Labs',
+      description: 'Researched cryptographic key derivation, defensive zero-trust architectures, and spatial map engines.'
+    }
+  ],
   theme: 'dark'
 };
 
@@ -383,13 +431,21 @@ function BrandMark({ config }: { config: SiteConfig }) {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-400/40 flex items-center justify-center text-emerald-400 font-mono text-xs font-bold shadow-[0_0_15px_rgba(0,245,160,0.2)]">
-        {initials}
-      </div>
+      {config.profile_image_url ? (
+        <img
+          src={config.profile_image_url}
+          alt={config.name}
+          className="w-8 h-8 rounded-lg object-cover border border-emerald-400/40 shadow-[0_0_15px_rgba(0,245,160,0.2)]"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-400/40 flex items-center justify-center text-emerald-400 font-mono text-xs font-bold shadow-[0_0_15px_rgba(0,245,160,0.2)]">
+          {initials}
+        </div>
+      )}
       <div>
         <div className="text-sm font-semibold tracking-tight text-slate-100 flex items-center gap-1.5">
           {config.name.split(' ')[0] || 'Muhammadaziz'}{' '}
-          <span className="text-emerald-400 font-mono text-[10px] px-1 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">v3.0</span>
+          <span className="text-emerald-400 font-mono text-[10px] px-1 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">v3.2</span>
         </div>
         <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
           <Stethoscope size={10} className="text-cyan-400" />
@@ -415,7 +471,7 @@ function SiteShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     getSiteConfig().then((cfg) => {
-      if (cfg) setSiteConfig(cfg);
+      if (cfg) setSiteConfig({ ...defaultSiteConfig, ...cfg });
     });
   }, []);
 
@@ -473,7 +529,7 @@ function SiteShell({ children }: { children: ReactNode }) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>{siteConfig.status_text || 'Tashkent · Dual-Core Practice'}</span>
+              <span className="truncate">{siteConfig.status_text || 'Tashkent · Dual-Core Practice'}</span>
             </div>
 
             <div className="flex items-center gap-3 text-slate-400">
@@ -490,6 +546,11 @@ function SiteShell({ children }: { children: ReactNode }) {
               {siteConfig.twitter_url && (
                 <a href={siteConfig.twitter_url} target="_blank" rel="noreferrer" className="hover:text-pink-400 transition-colors" title="Twitter/X">
                   <Twitter size={15} />
+                </a>
+              )}
+              {siteConfig.telegram_url && (
+                <a href={siteConfig.telegram_url} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors" title="Telegram">
+                  <Send size={15} />
                 </a>
               )}
             </div>
@@ -797,7 +858,7 @@ function HomePage() {
 
   useEffect(() => {
     getSiteConfig().then((cfg) => {
-      if (cfg) setConfig(cfg);
+      if (cfg) setConfig({ ...defaultSiteConfig, ...cfg });
     });
 
     Promise.allSettled([
@@ -825,7 +886,7 @@ function HomePage() {
 
       if (p.status === 'fulfilled' && p.value.length > 0) setFeaturedProjects(p.value.slice(0, 2));
       if (e.status === 'fulfilled' && e.value.length > 0) setLatestEssays(e.value.slice(0, 2));
-      if (tp.status === 'fulfilled' && tp.value.length > 0) setLatestTips(tp.value.slice(0, 2));
+      if (tp.status === 'fulfilled' && tp.value.length > 0) setLatestTips(tp.value.slice(0, 3));
     });
   }, []);
 
@@ -834,9 +895,18 @@ function HomePage() {
       {/* Hero Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         <div className="lg:col-span-7 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>{config.status_text || 'Dual-Core Practice: Surgery & CyberSec'}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{config.status_text || 'Dual-Core Practice: Surgery & CyberSec'}</span>
+            </div>
+
+            {config.available_for_work && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-mono">
+                <CheckCircle2 size={12} className="text-cyan-400" />
+                <span>{t('availableBadge')}</span>
+              </div>
+            )}
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-slate-100 leading-[1.1]">
@@ -858,12 +928,23 @@ function HomePage() {
               {t('selectedWork')} <ArrowRight size={14} />
             </Link>
 
-            <Link
-              href="/medical"
-              className="flex items-center gap-2 px-5 py-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold transition-all"
-            >
-              <Stethoscope size={14} /> Medical Learning
-            </Link>
+            {config.resume_url ? (
+              <a
+                href={config.resume_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-emerald-400/40 text-slate-200 font-mono text-xs font-bold transition-all"
+              >
+                <Download size={14} className="text-emerald-400" /> {t('downloadResume')}
+              </a>
+            ) : (
+              <Link
+                href="/medical"
+                className="flex items-center gap-2 px-5 py-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold transition-all"
+              >
+                <Stethoscope size={14} /> Medical Learning
+              </Link>
+            )}
           </div>
         </div>
 
@@ -871,6 +952,34 @@ function HomePage() {
           <ActivityLog />
         </div>
       </section>
+
+      {/* Dynamic Skills Bar */}
+      {config.skills && config.skills.length > 0 && (
+        <section className="space-y-4">
+          <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Expertise & Disciplines</div>
+          <div className="flex flex-wrap gap-2">
+            {config.skills.map((skill) => (
+              <span
+                key={skill}
+                className="px-3 py-1.5 rounded-lg bg-[#131B27] border border-slate-800 text-xs font-mono text-slate-300 hover:border-emerald-500/40 transition-colors"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Dynamic Philosophy Quote */}
+      {config.quote && (
+        <section className="p-6 rounded-2xl border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
+          <Quote size={24} className="text-emerald-400/40 mb-2" />
+          <p className="text-base sm:text-lg text-slate-200 font-serif italic leading-relaxed">
+            {config.quote}
+          </p>
+          <div className="text-xs font-mono text-emerald-400 mt-3">— {config.name}</div>
+        </section>
+      )}
 
       {/* Dynamic Aggregated Quick Stats */}
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -901,7 +1010,7 @@ function HomePage() {
         })}
       </section>
 
-      {/* 10 Sections Grid */}
+      {/* 10 Sections Explore Grid */}
       <section className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div>
@@ -1022,6 +1131,7 @@ function HomePage() {
 function ProjectsPage() {
   const [projectsList, setProjectsList] = useState<Project[]>(fallbackProjects);
   const [category, setCategory] = useState<string>('All');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     listProjects().then((data) => {
@@ -1030,7 +1140,11 @@ function ProjectsPage() {
   }, []);
 
   const categories = ['All', 'Product', 'Security', 'Medicine', 'Prototype'];
-  const filtered = projectsList.filter((p) => (category === 'All' ? true : p.category === category));
+  const filtered = projectsList.filter((p) => {
+    const matchCat = category === 'All' ? true : p.category === category;
+    const matchSearch = !search || `${p.name} ${p.summary} ${p.techStack?.join(' ')}`.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
   return (
     <div className="max-w-5xl mx-auto px-6 pt-24 pb-16 space-y-12">
@@ -1041,20 +1155,32 @@ function ProjectsPage() {
           High-performance distributed systems, zero-trust cryptographic vaults, and medical vector models.
         </p>
 
-        <div className="flex flex-wrap gap-2 pt-4">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-mono transition-all border ${
-                category === cat
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono transition-all border ${
+                  category === cat
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search projects..."
+              className="pl-9 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-200 outline-none focus:border-emerald-500/50"
+            />
+          </div>
         </div>
       </div>
 
@@ -1329,59 +1455,102 @@ function GalleryPage() {
 }
 
 // ==========================================
-// 10. ABOUT PAGE
+// 10. ABOUT PAGE (100% DYNAMIC)
 // ==========================================
 function AboutPage() {
   const [config, setConfig] = useState<SiteConfig>(defaultSiteConfig);
 
   useEffect(() => {
     getSiteConfig().then((cfg) => {
-      if (cfg) setConfig(cfg);
+      if (cfg) setConfig({ ...defaultSiteConfig, ...cfg });
     });
   }, []);
 
-  const skills = [
-    'Next.js 14 / TypeScript',
-    'PostgreSQL / Supabase RLS',
-    'Cryptographic Key Derivation (HKDF)',
-    'Surgical Anatomy Dissection',
-    'Zero-Trust Architecture',
-    'Microvascular Anastomosis Prep',
-    'Distributed Systems',
-    'Calm Product Engineering',
-  ];
-
   return (
-    <div className="max-w-4xl mx-auto px-6 pt-24 pb-16 space-y-12">
-      <div>
-        <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Identity & Roadmap</div>
-        <h1 className="text-4xl font-bold text-slate-100 font-serif mt-2">{config.name}</h1>
-        <p className="text-base text-slate-300 mt-2 leading-relaxed">
-          {config.title} · {config.status_text}
-        </p>
+    <div className="max-w-4xl mx-auto px-6 pt-24 pb-16 space-y-16">
+      <div className="flex flex-col sm:flex-row items-start gap-6 border-b border-slate-800 pb-8">
+        {config.profile_image_url && (
+          <img
+            src={config.profile_image_url}
+            alt={config.name}
+            className="w-24 h-24 rounded-2xl object-cover border-2 border-emerald-400/40 shadow-xl"
+          />
+        )}
+        <div className="space-y-2 flex-1">
+          <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Identity & Dual-Domain Practice</div>
+          <h1 className="text-4xl font-bold text-slate-100 font-serif">{config.name}</h1>
+          <p className="text-base text-slate-300 leading-relaxed font-sans">
+            {config.title} · {config.status_text}
+          </p>
+
+          {config.resume_url && (
+            <div className="pt-2">
+              <a
+                href={config.resume_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold hover:bg-emerald-500/30 transition-all"
+              >
+                <Download size={13} /> Download Official Resume / CV
+              </a>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-6 text-sm text-slate-300 font-sans leading-relaxed">
-          <p>{config.bio}</p>
-          <p>
-            My engineering philosophy centers on quiet, high-assurance software that respects human cognitive bandwidth. Rather than engineering for addictive loops, I build calm tools that solve high-stakes problems with zero friction.
-          </p>
-          <div className="p-4 rounded-xl border-l-2 border-emerald-400 bg-emerald-500/5 text-slate-200 font-serif italic text-base">
-            “The codebase and the patient both demand the same standard: careful observation before action, and respect for the human on the other side.”
+          <div className="space-y-4">
+            <h2 className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Biography & Manifesto</h2>
+            <p>{config.bio}</p>
           </div>
+
+          {config.quote && (
+            <div className="p-5 rounded-2xl border-l-4 border-emerald-400 bg-emerald-500/5 text-slate-200 font-serif italic text-base">
+              “{config.quote}”
+            </div>
+          )}
+
+          {/* Timeline / Milestones */}
+          {config.timeline && config.timeline.length > 0 && (
+            <div className="space-y-4 pt-4">
+              <h2 className="text-xs font-mono text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                <Briefcase size={14} /> Experience & Milestones
+              </h2>
+              <div className="space-y-3 font-mono">
+                {config.timeline.map((m, i) => (
+                  <div key={i} className="p-4 rounded-xl border border-slate-800 bg-[#131B27]/80 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-100">{m.title}</span>
+                      <span className="text-emerald-400 text-[11px]">{m.year}</span>
+                    </div>
+                    <div className="text-slate-400 text-[11px]">{m.organization}</div>
+                    <div className="text-slate-400 text-xs font-sans mt-2">{m.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6 font-mono">
-          <div className="p-5 rounded-xl border border-slate-800 bg-[#131B27]">
-            <div className="text-xs text-emerald-400 font-bold uppercase mb-3">Core Disciplines</div>
-            <div className="flex flex-wrap gap-1.5">
-              {skills.map((s) => (
-                <span key={s} className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300">
-                  {s}
-                </span>
-              ))}
+          {config.skills && config.skills.length > 0 && (
+            <div className="p-5 rounded-xl border border-slate-800 bg-[#131B27]">
+              <div className="text-xs text-emerald-400 font-bold uppercase mb-3">Skills Matrix</div>
+              <div className="flex flex-wrap gap-1.5">
+                {config.skills.map((s) => (
+                  <span key={s} className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300">
+                    {s}
+                  </span>
+                ))}
+              </div>
             </div>
+          )}
+
+          <div className="p-5 rounded-xl border border-slate-800 bg-[#131B27] space-y-3 text-xs">
+            <div className="text-xs text-cyan-400 font-bold uppercase">Direct Contact</div>
+            <div className="text-slate-300">{config.email}</div>
+            <div className="text-slate-500 text-[11px]">Tashkent, Uzbekistan (UTC+5)</div>
           </div>
         </div>
       </div>
@@ -1519,6 +1688,7 @@ function AdminPage() {
   const [authStatus, setAuthStatus] = useState<'checking' | 'authed' | 'denied'>('checking');
   const [adminEmail, setAdminEmail] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'settings' | 'essays' | 'books' | 'travels' | 'games' | 'security' | 'medical' | 'projects' | 'tips' | 'gallery'>('dashboard');
+  const [tabSearch, setTabSearch] = useState('');
 
   // Live state for all 10 modules
   const [liveConfig, setLiveConfig] = useState<SiteConfig>(defaultSiteConfig);
@@ -1534,8 +1704,7 @@ function AdminPage() {
   const [telemetryLogs, setTelemetryLogs] = useState<any[]>([]);
 
   // Modals state
-  const [configSaving, setConfigSaving] = useState(false);
-  const [configSuccess, setConfigSuccess] = useState(false);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const [projectModal, setProjectModal] = useState<{ mode: ModalMode; initial?: Partial<Project> } | null>(null);
   const [essayModal, setEssayModal] = useState<{ mode: ModalMode; initial?: Partial<Essay> } | null>(null);
   const [bookModal, setBookModal] = useState<{ mode: ModalMode; initial?: Partial<Book> } | null>(null);
@@ -1606,7 +1775,7 @@ function AdminPage() {
       api.listTelemetryLogs(),
     ]);
 
-    if (cfg.status === 'fulfilled' && cfg.value) setLiveConfig(cfg.value);
+    if (cfg.status === 'fulfilled' && cfg.value) setLiveConfig({ ...defaultSiteConfig, ...cfg.value });
     if (p.status === 'fulfilled') setLiveProjects(p.value.length > 0 ? p.value : fallbackProjects);
     if (e.status === 'fulfilled') setLiveEssays(e.value.length > 0 ? e.value : fallbackEssays);
     if (b.status === 'fulfilled') setLiveBooks(b.value);
@@ -1647,19 +1816,6 @@ function AdminPage() {
     setAuthStatus('denied');
   };
 
-  const handleSaveConfig = async (e: FormEvent) => {
-    e.preventDefault();
-    setConfigSaving(true);
-    setConfigSuccess(false);
-    try {
-      await updateSiteConfig(liveConfig);
-      setConfigSuccess(true);
-      setTimeout(() => setConfigSuccess(false), 3000);
-    } finally {
-      setConfigSaving(false);
-    }
-  };
-
   if (authStatus === 'checking') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1677,7 +1833,7 @@ function AdminPage() {
 
   const adminTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Activity },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'Global Settings', icon: Settings },
     { id: 'projects', label: 'Projects', icon: Code },
     { id: 'essays', label: 'Essays', icon: Layers },
     { id: 'books', label: 'Books', icon: BookOpen },
@@ -1726,7 +1882,7 @@ function AdminPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setTabSearch(''); }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono whitespace-nowrap transition-all border ${
                 activeTab === tab.id
                   ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold shadow-[0_0_15px_rgba(0,245,160,0.15)]'
@@ -1775,10 +1931,10 @@ function AdminPage() {
 
           <div className="p-6 rounded-2xl border border-slate-800 bg-[#131B27]/60 space-y-4">
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <Sparkles size={14} className="text-emerald-400" /> Quick Architecture Status
+              <Sparkles size={14} className="text-emerald-400" /> Dynamic Portfolio Engine v3.2
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              All 10 modules are actively connected to Supabase Database & Storage with Row-Level Security. Select any tab above to Create, Read, Update, or Delete live content in real-time.
+              All 10 modules are actively connected to Supabase Database & Storage with Row-Level Security. You can edit site identity, upload resumes/diagrams, manage skills, and publish clinical/cyber reflections in real time.
             </p>
           </div>
         </div>
@@ -1786,137 +1942,96 @@ function AdminPage() {
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <form onSubmit={handleSaveConfig} className="p-6 rounded-2xl border border-slate-800 bg-[#131B27] space-y-6">
+        <div className="p-6 rounded-2xl border border-slate-800 bg-[#131B27] space-y-6">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <h2 className="text-lg font-bold text-slate-100">Global Site Settings</h2>
+            <div>
+              <h2 className="text-lg font-bold text-slate-100">Global Site Settings & Identity</h2>
+              <p className="text-xs text-slate-400">Edit your name, bio, philosophy quote, skills, timeline, and resume link.</p>
+            </div>
             <button
-              type="submit"
-              disabled={configSaving}
-              className="px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold hover:bg-emerald-500/30 transition-all"
+              onClick={() => setConfigModalOpen(true)}
+              className="px-5 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold hover:bg-emerald-500/30 transition-all flex items-center gap-2"
             >
-              {configSaving ? 'Saving…' : 'Save Changes'}
+              <Edit3 size={13} /> Open Advanced Config Editor
             </button>
           </div>
 
-          {configSuccess && (
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
-              ✓ Site settings updated successfully!
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className="block text-slate-400 mb-1">Full Name</label>
-              <input
-                value={liveConfig.name}
-                onChange={(e) => setLiveConfig({ ...liveConfig, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
+            <div className="space-y-3 p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="text-emerald-400 font-bold uppercase">Identity Preview</div>
+              <div><strong>Name:</strong> {liveConfig.name}</div>
+              <div><strong>Title:</strong> {liveConfig.title}</div>
+              <div><strong>Headline:</strong> {liveConfig.headline}</div>
+              <div><strong>Status:</strong> {liveConfig.status_text}</div>
+              <div><strong>Email:</strong> {liveConfig.email}</div>
+              <div><strong>Available for Work:</strong> {liveConfig.available_for_work ? '✓ Yes' : '✗ No'}</div>
             </div>
 
-            <div>
-              <label className="block text-slate-400 mb-1">Title / Headline</label>
-              <input
-                value={liveConfig.title}
-                onChange={(e) => setLiveConfig({ ...liveConfig, title: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-slate-400 mb-1">Hero Lead / Subheading</label>
-              <input
-                value={liveConfig.headline}
-                onChange={(e) => setLiveConfig({ ...liveConfig, headline: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-slate-400 mb-1">Full Biography</label>
-              <textarea
-                rows={4}
-                value={liveConfig.bio}
-                onChange={(e) => setLiveConfig({ ...liveConfig, bio: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-400 mb-1">Status Badge Text</label>
-              <input
-                value={liveConfig.status_text || ''}
-                onChange={(e) => setLiveConfig({ ...liveConfig, status_text: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-400 mb-1">Contact Email</label>
-              <input
-                value={liveConfig.email || ''}
-                onChange={(e) => setLiveConfig({ ...liveConfig, email: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-400 mb-1">GitHub URL</label>
-              <input
-                value={liveConfig.github_url || ''}
-                onChange={(e) => setLiveConfig({ ...liveConfig, github_url: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-400 mb-1">LinkedIn URL</label>
-              <input
-                value={liveConfig.linkedin_url || ''}
-                onChange={(e) => setLiveConfig({ ...liveConfig, linkedin_url: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-emerald-400"
-              />
+            <div className="space-y-3 p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="text-cyan-400 font-bold uppercase">Skills & Milestones</div>
+              <div>
+                <strong>Skills Count:</strong> {liveConfig.skills?.length || 0}
+                <div className="text-slate-400 text-[11px] truncate mt-1">
+                  {liveConfig.skills?.join(', ')}
+                </div>
+              </div>
+              <div className="pt-2">
+                <strong>Timeline Milestones:</strong> {liveConfig.timeline?.length || 0} items
+              </div>
+              <div className="pt-2">
+                <strong>Resume URL:</strong> {liveConfig.resume_url ? <a href={liveConfig.resume_url} target="_blank" rel="noreferrer" className="text-emerald-400 underline">View PDF</a> : 'Not uploaded'}
+              </div>
             </div>
           </div>
-        </form>
+        </div>
       )}
 
       {/* Projects Management Tab */}
       {activeTab === 'projects' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Projects ({liveProjects.length})</h2>
-            <button
-              onClick={() => setProjectModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Project
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter projects..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setProjectModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Project
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveProjects.map((p) => (
-              <div key={p.slug} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{p.name}</div>
-                  <div className="text-slate-400 text-[11px]">{p.category} · {p.year}</div>
+            {liveProjects
+              .filter((p) => !tabSearch || `${p.name} ${p.summary} ${p.category}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((p) => (
+                <div key={p.slug} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{p.name}</div>
+                    <div className="text-slate-400 text-[11px]">{p.category} · {p.year}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setProjectModal({ mode: 'edit', initial: p })}
+                      className="p-1.5 text-slate-400 hover:text-emerald-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm({ table: 'projects', id: p.id || p.slug, label: p.name })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setProjectModal({ mode: 'edit', initial: p })}
-                    className="p-1.5 text-slate-400 hover:text-emerald-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm({ table: 'projects', id: p.id || p.slug, label: p.name })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -1924,39 +2039,49 @@ function AdminPage() {
       {/* Essays Management Tab */}
       {activeTab === 'essays' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Essays ({liveEssays.length})</h2>
-            <button
-              onClick={() => setEssayModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Essay
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter essays..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setEssayModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Essay
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveEssays.map((e) => (
-              <div key={e.slug} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{e.title}</div>
-                  <div className="text-slate-400 text-[11px]">{e.category || e.type} · {e.read}</div>
+            {liveEssays
+              .filter((e) => !tabSearch || `${e.title} ${e.dek} ${e.category}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((e) => (
+                <div key={e.slug} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{e.title}</div>
+                    <div className="text-slate-400 text-[11px]">{e.category || e.type} · {e.read}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setEssayModal({ mode: 'edit', initial: e })}
+                      className="p-1.5 text-slate-400 hover:text-cyan-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm({ table: 'essays', id: e.id || e.slug, label: e.title })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setEssayModal({ mode: 'edit', initial: e })}
-                    className="p-1.5 text-slate-400 hover:text-cyan-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm({ table: 'essays', id: e.id || e.slug, label: e.title })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -1964,39 +2089,49 @@ function AdminPage() {
       {/* Books Management Tab */}
       {activeTab === 'books' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Books ({liveBooks.length})</h2>
-            <button
-              onClick={() => setBookModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Book
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter books..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setBookModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Book
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveBooks.map((b) => (
-              <div key={b.id || b.title} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{b.title}</div>
-                  <div className="text-slate-400 text-[11px]">by {b.author} · {b.status} · {b.rating}★</div>
+            {liveBooks
+              .filter((b) => !tabSearch || `${b.title} ${b.author}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((b) => (
+                <div key={b.id || b.title} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{b.title}</div>
+                    <div className="text-slate-400 text-[11px]">by {b.author} · {b.status} · {b.rating}★</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setBookModal({ mode: 'edit', initial: b })}
+                      className="p-1.5 text-slate-400 hover:text-amber-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => b.id && setDeleteConfirm({ table: 'books', id: b.id, label: b.title })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setBookModal({ mode: 'edit', initial: b })}
-                    className="p-1.5 text-slate-400 hover:text-amber-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => b.id && setDeleteConfirm({ table: 'books', id: b.id, label: b.title })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -2004,39 +2139,49 @@ function AdminPage() {
       {/* Travels Tab */}
       {activeTab === 'travels' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Travels ({liveTravels.length})</h2>
-            <button
-              onClick={() => setTravelModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Trip
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter trips..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setTravelModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Trip
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveTravels.map((tr) => (
-              <div key={tr.id || tr.trip_title} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{tr.trip_title}</div>
-                  <div className="text-slate-400 text-[11px]">{tr.location}</div>
+            {liveTravels
+              .filter((tr) => !tabSearch || `${tr.trip_title} ${tr.location}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((tr) => (
+                <div key={tr.id || tr.trip_title} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{tr.trip_title}</div>
+                    <div className="text-slate-400 text-[11px]">{tr.location}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setTravelModal({ mode: 'edit', initial: tr })}
+                      className="p-1.5 text-slate-400 hover:text-teal-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => tr.id && setDeleteConfirm({ table: 'travels', id: tr.id, label: tr.trip_title })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setTravelModal({ mode: 'edit', initial: tr })}
-                    className="p-1.5 text-slate-400 hover:text-teal-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => tr.id && setDeleteConfirm({ table: 'travels', id: tr.id, label: tr.trip_title })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -2044,39 +2189,49 @@ function AdminPage() {
       {/* Games Tab */}
       {activeTab === 'games' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Games & Hobbies ({liveGames.length})</h2>
-            <button
-              onClick={() => setGameModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-500/20 border border-pink-500/40 text-pink-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Game
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter games..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setGameModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-500/20 border border-pink-500/40 text-pink-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Game
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveGames.map((g) => (
-              <div key={g.id || g.name} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{g.name}</div>
-                  <div className="text-slate-400 text-[11px]">{g.type} · {g.rating}★</div>
+            {liveGames
+              .filter((g) => !tabSearch || `${g.name} ${g.type}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((g) => (
+                <div key={g.id || g.name} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{g.name}</div>
+                    <div className="text-slate-400 text-[11px]">{g.type} · {g.rating}★</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setGameModal({ mode: 'edit', initial: g })}
+                      className="p-1.5 text-slate-400 hover:text-pink-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => g.id && setDeleteConfirm({ table: 'games', id: g.id, label: g.name })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setGameModal({ mode: 'edit', initial: g })}
-                    className="p-1.5 text-slate-400 hover:text-pink-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => g.id && setDeleteConfirm({ table: 'games', id: g.id, label: g.name })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -2084,39 +2239,49 @@ function AdminPage() {
       {/* Security Notes Tab */}
       {activeTab === 'security' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Security Notes ({liveSecurity.length})</h2>
-            <button
-              onClick={() => setSecurityModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Note
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter notes..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setSecurityModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Note
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveSecurity.map((s) => (
-              <div key={s.id || s.title} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{s.title}</div>
-                  <div className="text-slate-400 text-[11px]">{s.category} · {s.difficulty}</div>
+            {liveSecurity
+              .filter((s) => !tabSearch || `${s.title} ${s.category} ${s.difficulty}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((s) => (
+                <div key={s.id || s.title} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{s.title}</div>
+                    <div className="text-slate-400 text-[11px]">{s.category} · {s.difficulty}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSecurityModal({ mode: 'edit', initial: s })}
+                      className="p-1.5 text-slate-400 hover:text-emerald-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => s.id && setDeleteConfirm({ table: 'security_notes', id: s.id, label: s.title })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSecurityModal({ mode: 'edit', initial: s })}
-                    className="p-1.5 text-slate-400 hover:text-emerald-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => s.id && setDeleteConfirm({ table: 'security_notes', id: s.id, label: s.title })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -2124,39 +2289,49 @@ function AdminPage() {
       {/* Medical Learning Tab */}
       {activeTab === 'medical' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Medical Learning ({liveMedical.length})</h2>
-            <button
-              onClick={() => setMedicalModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Topic
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter topics..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setMedicalModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Topic
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveMedical.map((m) => (
-              <div key={m.id || m.topic} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{m.topic}</div>
-                  <div className="text-slate-400 text-[11px]">{m.system} · {m.status}</div>
+            {liveMedical
+              .filter((m) => !tabSearch || `${m.topic} ${m.system}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((m) => (
+                <div key={m.id || m.topic} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{m.topic}</div>
+                    <div className="text-slate-400 text-[11px]">{m.system} · {m.status}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setMedicalModal({ mode: 'edit', initial: m })}
+                      className="p-1.5 text-slate-400 hover:text-blue-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => m.id && setDeleteConfirm({ table: 'medical_learning', id: m.id, label: m.topic })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setMedicalModal({ mode: 'edit', initial: m })}
-                    className="p-1.5 text-slate-400 hover:text-blue-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => m.id && setDeleteConfirm({ table: 'medical_learning', id: m.id, label: m.topic })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -2164,39 +2339,49 @@ function AdminPage() {
       {/* Quick Tips Tab */}
       {activeTab === 'tips' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Quick Tips ({liveTips.length})</h2>
-            <button
-              onClick={() => setTipModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Tip
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter tips..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setTipModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Tip
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveTips.map((tip) => (
-              <div key={tip.id || tip.insight} className="p-4 flex items-center justify-between text-xs">
-                <div className="max-w-xl">
-                  <div className="font-bold text-slate-100 line-clamp-1">"{tip.insight}"</div>
-                  <div className="text-slate-400 text-[11px]">{tip.category}</div>
+            {liveTips
+              .filter((tip) => !tabSearch || `${tip.insight} ${tip.category}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((tip) => (
+                <div key={tip.id || tip.insight} className="p-4 flex items-center justify-between text-xs">
+                  <div className="max-w-xl">
+                    <div className="font-bold text-slate-100 line-clamp-1">"{tip.insight}"</div>
+                    <div className="text-slate-400 text-[11px]">{tip.category}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setTipModal({ mode: 'edit', initial: tip })}
+                      className="p-1.5 text-slate-400 hover:text-amber-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => tip.id && setDeleteConfirm({ table: 'quick_tips', id: tip.id, label: tip.insight })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setTipModal({ mode: 'edit', initial: tip })}
-                    className="p-1.5 text-slate-400 hover:text-amber-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => tip.id && setDeleteConfirm({ table: 'quick_tips', id: tip.id, label: tip.insight })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -2204,44 +2389,66 @@ function AdminPage() {
       {/* Gallery Tab */}
       {activeTab === 'gallery' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-100">Gallery Plates ({liveGallery.length})</h2>
-            <button
-              onClick={() => setGalleryModal({ mode: 'create' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
-            >
-              <Plus size={13} /> Add Plate
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                value={tabSearch}
+                onChange={(e) => setTabSearch(e.target.value)}
+                placeholder="Filter plates..."
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+              />
+              <button
+                onClick={() => setGalleryModal({ mode: 'create' })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
+              >
+                <Plus size={13} /> Add Plate
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#131B27] divide-y divide-slate-800">
-            {liveGallery.map((gal) => (
-              <div key={gal.id || gal.title} className="p-4 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{gal.title}</div>
-                  <div className="text-slate-400 text-[11px]">{gal.category}</div>
+            {liveGallery
+              .filter((gal) => !tabSearch || `${gal.title} ${gal.category}`.toLowerCase().includes(tabSearch.toLowerCase()))
+              .map((gal) => (
+                <div key={gal.id || gal.title} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-100">{gal.title}</div>
+                    <div className="text-slate-400 text-[11px]">{gal.category}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setGalleryModal({ mode: 'edit', initial: gal })}
+                      className="p-1.5 text-slate-400 hover:text-emerald-300"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => gal.id && setDeleteConfirm({ table: 'gallery', id: gal.id, label: gal.title })}
+                      className="p-1.5 text-slate-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setGalleryModal({ mode: 'edit', initial: gal })}
-                    className="p-1.5 text-slate-400 hover:text-emerald-300"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => gal.id && setDeleteConfirm({ table: 'gallery', id: gal.id, label: gal.title })}
-                    className="p-1.5 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
 
       {/* Dynamic Interactive Modals */}
+      {configModalOpen && (
+        <SiteConfigModal
+          initial={liveConfig}
+          onClose={() => setConfigModalOpen(false)}
+          onSave={async (data) => {
+            const updated = await updateSiteConfig(data);
+            setLiveConfig(updated);
+            await loadData();
+          }}
+        />
+      )}
+
       {projectModal && (
         <ProjectModal
           mode={projectModal.mode}

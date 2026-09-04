@@ -18,18 +18,40 @@ export const uploadMedia = async (file: File, folder: string = ''): Promise<stri
 // ==========================================
 // 1. SITE CONFIG
 // ==========================================
+export interface TimelineMilestone {
+  year: string;
+  title: string;
+  organization: string;
+  description: string;
+  icon?: string;
+}
+
+export interface CustomSocialLink {
+  platform: string;
+  url: string;
+}
+
 export interface SiteConfig {
   id?: string;
   name: string;
   title: string;
   headline: string;
   bio: string;
+  quote?: string;
   profile_image_url?: string;
+  resume_url?: string;
   github_url?: string;
   linkedin_url?: string;
   twitter_url?: string;
+  telegram_url?: string;
+  instagram_url?: string;
+  youtube_url?: string;
   email?: string;
   status_text?: string;
+  available_for_work?: boolean;
+  skills?: string[];
+  timeline?: TimelineMilestone[];
+  custom_socials?: CustomSocialLink[];
   theme?: string;
   updated_at?: string;
 }
@@ -44,14 +66,24 @@ export const getSiteConfig = async (): Promise<SiteConfig | null> => {
   }
 };
 
-export const updateSiteConfig = async (updates: Partial<SiteConfig> & { imageFile?: File }): Promise<SiteConfig> => {
+export const updateSiteConfig = async (
+  updates: Partial<SiteConfig> & { imageFile?: File; resumeFile?: File }
+): Promise<SiteConfig> => {
   let profileImageUrl = updates.profile_image_url;
   if (updates.imageFile) {
     profileImageUrl = await uploadMedia(updates.imageFile, 'avatar');
   }
+
+  let resumeUrl = updates.resume_url;
+  if (updates.resumeFile) {
+    resumeUrl = await uploadMedia(updates.resumeFile, 'resume');
+  }
+
   const payload: any = { ...updates, updated_at: new Date().toISOString() };
   if (profileImageUrl !== undefined) payload.profile_image_url = profileImageUrl;
+  if (resumeUrl !== undefined) payload.resume_url = resumeUrl;
   delete payload.imageFile;
+  delete payload.resumeFile;
 
   const existing = await getSiteConfig();
   if (existing?.id) {

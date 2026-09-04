@@ -63,13 +63,30 @@ alter table public.site_config add column if not exists name text not null defau
 alter table public.site_config add column if not exists title text default 'Software Engineer & Future Surgeon';
 alter table public.site_config add column if not exists headline text default 'Bridging Medical Precision and Cyber-Security Architecture.';
 alter table public.site_config add column if not exists bio text default 'Passionate technologist dedicated to biomedical innovation, high-assurance security engineering, and surgical science.';
+alter table public.site_config add column if not exists quote text default 'The codebase and the patient both demand the same standard: careful observation before action, and respect for the human on the other side.';
 alter table public.site_config add column if not exists profile_image_url text;
+alter table public.site_config add column if not exists resume_url text;
 alter table public.site_config add column if not exists github_url text default 'https://github.com/Muhammadaziz3427';
 alter table public.site_config add column if not exists linkedin_url text default 'https://linkedin.com';
 alter table public.site_config add column if not exists twitter_url text default 'https://twitter.com';
+alter table public.site_config add column if not exists telegram_url text default 'https://t.me/yursinaliev';
+alter table public.site_config add column if not exists instagram_url text;
+alter table public.site_config add column if not exists youtube_url text;
 alter table public.site_config add column if not exists email text default 'yursinaliyevm@gmail.com';
 alter table public.site_config add column if not exists status_text text default 'Tashkent · Dual-Core Practice Active';
+alter table public.site_config add column if not exists available_for_work boolean default true;
 alter table public.site_config add column if not exists theme text default 'dark';
+alter table public.site_config add column if not exists skills text[] default '{
+  "Next.js 14 / React", "TypeScript", "PostgreSQL / Supabase RLS",
+  "Zero-Trust Architecture", "Web Crypto & HKDF", "Surgical Anatomy Dissection",
+  "Microvascular Prep", "Distributed Systems", "Calm Product Engineering"
+}';
+alter table public.site_config add column if not exists timeline jsonb default '[
+  {"year": "2024—Present", "title": "Clinical & Biomedical Science", "organization": "Tashkent Medical Academy", "description": "Studying clinical medicine, cardiovascular physiology, and surgical anatomy with focus on precision procedures."},
+  {"year": "2023—2024", "title": "Lead Software Architect", "organization": "Kitobcha & Systems", "description": "Engineered offline-first reading rituals, zero-trust token vaults, and high-performance React architectures."},
+  {"year": "2022—2023", "title": "Cybersecurity & Full-Stack Engineer", "organization": "Independent Labs", "description": "Researched cryptographic key derivation, defensive zero-trust architectures, and spatial map engines."}
+]'::jsonb;
+alter table public.site_config add column if not exists custom_socials jsonb default '[]'::jsonb;
 alter table public.site_config add column if not exists updated_at timestamptz default timezone('utc', now());
 
 -- Seed default site_config if table is empty
