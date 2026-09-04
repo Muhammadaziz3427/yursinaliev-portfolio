@@ -53,7 +53,8 @@ import {
   Briefcase,
   GraduationCap,
   Download,
-  Share2
+  Share2,
+  Zap
 } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
@@ -81,6 +82,11 @@ import {
   MedicalLearningModal,
   GalleryModal
 } from '@/components/Admin/AdminModalsPart2';
+import {
+  MaximalistHeroBackground,
+  LiveECGTelemetry,
+  MaximalistCard3D
+} from '@/components/Maximalist/MaximalistHUD';
 import {
   type SiteConfig,
   type TimelineMilestone,
@@ -891,236 +897,254 @@ function HomePage() {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 pt-24 pb-16 space-y-24">
-      {/* Hero Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        <div className="lg:col-span-7 space-y-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{config.status_text || 'Dual-Core Practice: Surgery & CyberSec'}</span>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Interactive Layer */}
+      <MaximalistHeroBackground />
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-20 space-y-28">
+        {/* Hero Section */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-8">
+          <div className="lg:col-span-7 space-y-7">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300 text-xs font-mono shadow-[0_0_20px_rgba(30,255,160,0.2)]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="font-bold">{config.status_text || 'Dual-Core Practice: Surgery & CyberSec'}</span>
+              </div>
+
+              {config.available_for_work && (
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/10 text-cyan-300 text-xs font-mono shadow-[0_0_20px_rgba(0,240,255,0.2)]">
+                  <Zap size={13} className="text-cyan-400" />
+                  <span className="font-bold">{t('availableBadge')}</span>
+                </div>
+              )}
             </div>
 
-            {config.available_for_work && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-mono">
-                <CheckCircle2 size={12} className="text-cyan-400" />
-                <span>{t('availableBadge')}</span>
+            <div className="space-y-2">
+              <div className="font-space text-xs uppercase tracking-[0.3em] text-emerald-400 font-bold">
+                CLINICAL PRECISION & CYBER ASSURANCE
               </div>
-            )}
-          </div>
+              <h1 className="font-bebas text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-slate-100 leading-[0.9] text-glow-emerald">
+                {config.name.split(' ')[0]} <br />
+                <span className="font-playfair text-gradient-maximalist italic font-normal tracking-normal">
+                  {config.name.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
+                </span>
+              </h1>
+            </div>
 
-          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-slate-100 leading-[1.1]">
-            {config.name.split(' ')[0]} <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-teal-300 font-serif">
-              {config.name.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
-            </span>
-          </h1>
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-sans max-w-xl">
+              {config.headline || t('heroLead')}
+            </p>
 
-          <p className="text-lg text-slate-300 leading-relaxed font-sans max-w-xl">
-            {config.headline || t('heroLead')}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 pt-4">
-            <Link
-              href="/projects"
-              className="flex items-center gap-2 px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold transition-all shadow-[0_0_20px_rgba(0,245,160,0.3)]"
-            >
-              {t('selectedWork')} <ArrowRight size={14} />
-            </Link>
-
-            {config.resume_url ? (
-              <a
-                href={config.resume_url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-emerald-400/40 text-slate-200 font-mono text-xs font-bold transition-all"
-              >
-                <Download size={14} className="text-emerald-400" /> {t('downloadResume')}
-              </a>
-            ) : (
+            <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
-                href="/medical"
-                className="flex items-center gap-2 px-5 py-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold transition-all"
+                href="/projects"
+                className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-mono text-xs font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-[0_0_30px_rgba(30,255,160,0.5)] active:scale-95"
               >
-                <Stethoscope size={14} /> Medical Learning
+                {t('selectedWork')} <ArrowRight size={15} />
               </Link>
-            )}
+
+              {config.resume_url ? (
+                <a
+                  href={config.resume_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#131B27]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
+                >
+                  <Download size={15} className="text-cyan-400" /> {t('downloadResume')}
+                </a>
+              ) : (
+                <Link
+                  href="/medical"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#131B27]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
+                >
+                  <Stethoscope size={15} /> Medical Learning
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="lg:col-span-5 space-y-6">
-          <ActivityLog />
-        </div>
-      </section>
-
-      {/* Dynamic Skills Bar */}
-      {config.skills && config.skills.length > 0 && (
-        <section className="space-y-4">
-          <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Expertise & Disciplines</div>
-          <div className="flex flex-wrap gap-2">
-            {config.skills.map((skill) => (
-              <span
-                key={skill}
-                className="px-3 py-1.5 rounded-lg bg-[#131B27] border border-slate-800 text-xs font-mono text-slate-300 hover:border-emerald-500/40 transition-colors"
-              >
-                {skill}
-              </span>
-            ))}
+          <div className="lg:col-span-5 space-y-6">
+            <LiveECGTelemetry />
+            <ActivityLog />
           </div>
         </section>
-      )}
 
-      {/* Dynamic Philosophy Quote */}
-      {config.quote && (
-        <section className="p-6 rounded-2xl border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
-          <Quote size={24} className="text-emerald-400/40 mb-2" />
-          <p className="text-base sm:text-lg text-slate-200 font-serif italic leading-relaxed">
-            {config.quote}
-          </p>
-          <div className="text-xs font-mono text-emerald-400 mt-3">— {config.name}</div>
-        </section>
-      )}
+        {/* Dynamic Skills Bar */}
+        {config.skills && config.skills.length > 0 && (
+          <section className="space-y-4">
+            <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">
+              Core Expertise & Technical Stack
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {config.skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="px-4 py-2 rounded-xl bg-[#131B27]/80 border border-slate-700/80 text-xs font-mono text-slate-200 hover:border-emerald-400 hover:text-emerald-300 hover:shadow-[0_0_20px_rgba(30,255,160,0.25)] transition-all hover:scale-105"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* Dynamic Aggregated Quick Stats */}
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
-          { label: 'Projects', count: stats.projects, href: '/projects', icon: Code, color: 'text-emerald-400' },
-          { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers, color: 'text-cyan-400' },
-          { label: 'Books Read', count: stats.books, href: '/books', icon: BookOpen, color: 'text-amber-400' },
-          { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass, color: 'text-teal-400' },
-          { label: 'Security Notes', count: stats.security, href: '/security', icon: Shield, color: 'text-pink-400' },
-          { label: 'Medical Topics', count: stats.medical, href: '/medical', icon: Stethoscope, color: 'text-blue-400' },
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="p-4 rounded-xl border border-slate-800 bg-[#131B27]/80 hover:border-emerald-500/40 transition-all group block"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold font-mono text-slate-100">{item.count}</span>
-                <Icon size={16} className={item.color} />
-              </div>
-              <div className="text-xs font-mono text-slate-400 group-hover:text-emerald-300 transition-colors">
-                {item.label} →
-              </div>
-            </Link>
-          );
-        })}
-      </section>
+        {/* Dynamic Philosophy Quote */}
+        {config.quote && (
+          <section className="p-8 rounded-3xl border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-500/15 via-purple-500/10 to-transparent shadow-[0_0_40px_rgba(30,255,160,0.08)]">
+            <Quote size={32} className="text-emerald-400 mb-3 animate-pulse" />
+            <p className="text-lg sm:text-2xl text-slate-100 font-playfair italic leading-relaxed">
+              "{config.quote}"
+            </p>
+            <div className="font-space text-xs text-emerald-400 uppercase tracking-widest mt-4 font-bold">
+              — {config.name}
+            </div>
+          </section>
+        )}
 
-      {/* 10 Sections Explore Grid */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div>
-            <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Explore Blueprint</div>
-            <h2 className="text-2xl font-bold text-slate-100 font-serif">All 10 Dynamic Modules</h2>
-          </div>
-          <span className="text-xs font-mono text-slate-500">100% Admin Powered</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        {/* Dynamic Aggregated Quick Stats */}
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code },
-            { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers },
-            { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen },
-            { title: 'Travel', desc: 'Expeditions log', href: '/travel', icon: Compass },
-            { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2 },
-            { title: 'Security', desc: 'Zero-trust lab', href: '/security', icon: Shield },
-            { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope },
-            { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb },
-            { title: 'Gallery', desc: 'Anatomy plates', href: '/gallery', icon: Eye },
-            { title: 'About', desc: 'Dual-domain bio', href: '/about', icon: Sparkles },
-          ].map((sec) => {
-            const Icon = sec.icon;
+            { label: 'Projects', count: stats.projects, href: '/projects', icon: Code, color: 'text-emerald-400', glow: 'hover:shadow-[0_0_25px_rgba(30,255,160,0.3)]' },
+            { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers, color: 'text-cyan-400', glow: 'hover:shadow-[0_0_25px_rgba(0,240,255,0.3)]' },
+            { label: 'Books Read', count: stats.books, href: '/books', icon: BookOpen, color: 'text-amber-400', glow: 'hover:shadow-[0_0_25px_rgba(255,215,0,0.3)]' },
+            { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass, color: 'text-teal-400', glow: 'hover:shadow-[0_0_25px_rgba(45,212,191,0.3)]' },
+            { label: 'Security Notes', count: stats.security, href: '/security', icon: Shield, color: 'text-pink-400', glow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]' },
+            { label: 'Medical Topics', count: stats.medical, href: '/medical', icon: Stethoscope, color: 'text-blue-400', glow: 'hover:shadow-[0_0_25px_rgba(59,130,246,0.3)]' },
+          ].map((item) => {
+            const Icon = item.icon;
             return (
               <Link
-                key={sec.title}
-                href={sec.href}
-                className="p-4 rounded-xl border border-slate-800 bg-[#131B27]/60 hover:border-emerald-500/40 hover:bg-[#131B27] transition-all group block"
+                key={item.label}
+                href={item.href}
+                className={`p-5 rounded-2xl border border-slate-800 bg-[#131B27]/80 hover:border-emerald-400/60 transition-all hover:scale-105 group block ${item.glow}`}
               >
-                <Icon size={18} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
-                <h3 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors">
-                  {sec.title}
-                </h3>
-                <p className="text-[11px] font-mono text-slate-500">{sec.desc}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-3xl font-bold font-bebas text-slate-100">{item.count}</span>
+                  <Icon size={18} className={item.color} />
+                </div>
+                <div className="text-xs font-mono text-slate-400 group-hover:text-emerald-300 transition-colors">
+                  {item.label} →
+                </div>
               </Link>
             );
           })}
-        </div>
-      </section>
+        </section>
 
-      {/* Featured Projects */}
-      <section className="space-y-8">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div>
-            <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Systems Architecture</div>
-            <h2 className="text-2xl font-bold text-slate-100 font-serif">Selected Projects</h2>
+        {/* 10 Sections Explore Grid */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">Explore Blueprint</div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">All 10 Dynamic Modules</h2>
+            </div>
+            <span className="text-xs font-mono text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">100% Admin Powered</span>
           </div>
-          <Link href="/projects" className="text-xs font-mono text-emerald-400 hover:underline flex items-center gap-1">
-            View all ({stats.projects}) <ArrowRight size={13} />
-          </Link>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {featuredProjects.map((p) => (
-            <Link
-              key={p.slug}
-              href={`/projects/${p.slug}`}
-              className="p-6 rounded-xl border border-slate-800 bg-[#131B27]/80 hover:border-emerald-500/40 hover:shadow-[0_0_25px_rgba(0,245,160,0.1)] transition-all group block"
-            >
-              <div className="flex items-center justify-between text-xs font-mono text-emerald-400 mb-3">
-                <span>{p.number || '01'} / {p.category}</span>
-                <span className="text-slate-500">{p.year}</span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-100 group-hover:text-emerald-300 transition-colors mb-2">
-                {p.name}
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">{p.summary}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(p.techStack || p.tech_stack || []).map((tech) => (
-                  <span key={tech} className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] font-mono text-slate-400">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Latest Essays */}
-      <section className="space-y-8">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div>
-            <div className="text-xs font-mono text-cyan-400 uppercase tracking-wider">Clinical & Cyber Notebook</div>
-            <h2 className="text-2xl font-bold text-slate-100 font-serif">Recent Essays</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {[
+              { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code },
+              { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers },
+              { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen },
+              { title: 'Travel', desc: 'Expeditions log', href: '/travel', icon: Compass },
+              { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2 },
+              { title: 'Security', desc: 'Zero-trust lab', href: '/security', icon: Shield },
+              { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope },
+              { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb },
+              { title: 'Gallery', desc: 'Anatomy plates', href: '/gallery', icon: Eye },
+              { title: 'About', desc: 'Dual-domain bio', href: '/about', icon: Sparkles },
+            ].map((sec) => {
+              const Icon = sec.icon;
+              return (
+                <MaximalistCard3D key={sec.title}>
+                  <Link
+                    href={sec.href}
+                    className="p-5 rounded-2xl border border-slate-800 bg-[#131B27]/80 hover:border-emerald-400/50 hover:bg-[#131B27] transition-all group block shadow-lg"
+                  >
+                    <Icon size={22} className="text-emerald-400 mb-3 group-hover:scale-125 transition-transform" />
+                    <h3 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors">
+                      {sec.title}
+                    </h3>
+                    <p className="text-[11px] font-mono text-slate-400 mt-1">{sec.desc}</p>
+                  </Link>
+                </MaximalistCard3D>
+              );
+            })}
           </div>
-          <Link href="/essays" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
-            Read Archive <ArrowRight size={13} />
-          </Link>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {latestEssays.map((e) => (
-            <Link
-              key={e.slug}
-              href={`/essays/${e.slug}`}
-              className="p-6 rounded-xl border border-slate-800 bg-[#131B27]/80 hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(0,210,255,0.1)] transition-all group block"
-            >
-              <div className="flex items-center justify-between text-xs font-mono text-cyan-400 mb-3">
-                <span>{e.type || e.category}</span>
-                <span className="text-slate-500">{e.read || '5 min read'}</span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-100 group-hover:text-cyan-300 transition-colors mb-2">
-                {e.title}
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">{e.dek}</p>
+        {/* Featured Projects */}
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">High-Assurance Code</div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">Selected Projects</h2>
+            </div>
+            <Link href="/projects" className="text-xs font-mono text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+              View all ({stats.projects}) <ArrowRight size={14} />
             </Link>
-          ))}
-        </div>
-      </section>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {featuredProjects.map((p) => (
+              <MaximalistCard3D key={p.slug}>
+                <Link
+                  href={`/projects/${p.slug}`}
+                  className="p-7 rounded-2xl border border-slate-800 bg-[#131B27]/90 hover:border-emerald-400/60 hover:shadow-[0_0_35px_rgba(30,255,160,0.2)] transition-all group block space-y-4"
+                >
+                  <div className="flex items-center justify-between text-xs font-mono text-emerald-400">
+                    <span className="font-bold">{p.number || '01'} / {p.category}</span>
+                    <span className="text-slate-500">{p.year}</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-100 group-hover:text-emerald-300 transition-colors font-serif">
+                    {p.name}
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">{p.summary}</p>
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {(p.techStack || p.tech_stack || []).map((tech) => (
+                      <span key={tech} className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-mono text-emerald-300">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
+              </MaximalistCard3D>
+            ))}
+          </div>
+        </section>
+
+        {/* Latest Essays */}
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <div className="font-space text-xs text-cyan-400 uppercase tracking-[0.25em] font-bold">Clinical & Cyber Reflections</div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">Recent Essays</h2>
+            </div>
+            <Link href="/essays" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 font-bold">
+              Read Archive <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {latestEssays.map((e) => (
+              <MaximalistCard3D key={e.slug}>
+                <Link
+                  href={`/essays/${e.slug}`}
+                  className="p-7 rounded-2xl border border-slate-800 bg-[#131B27]/90 hover:border-cyan-400/60 hover:shadow-[0_0_35px_rgba(0,240,255,0.2)] transition-all group block space-y-3"
+                >
+                  <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
+                    <span className="font-bold">{e.type || e.category}</span>
+                    <span className="text-slate-500">{e.read || '5 min read'}</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-100 group-hover:text-cyan-300 transition-colors font-serif">
+                    {e.title}
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">{e.dek}</p>
+                </Link>
+              </MaximalistCard3D>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

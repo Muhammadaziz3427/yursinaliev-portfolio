@@ -853,19 +853,149 @@ body {
 .admin-table { margin-top: 45px; border-top: 1px solid var(--line); }
 .admin-row { display: grid; grid-template-columns: 1fr 120px 100px 90px; gap: 15px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); color: #a8c0ba; font-size: 12px; }
 .admin-row.header { color: #64807a; font: 10px var(--app-font-mono); text-transform: uppercase; }
-.admin-row button { border: 0; background: none; color: var(--blue); cursor: pointer; font: 10px var(--app-font-mono); text-align: left; }
-.admin-empty { padding: 30px 0; color: #77918b; font-size: 13px; }
-@media (max-width: 900px) {
-  .top-tools { position: absolute; top: 15px; right: 74px; }
-  .home-terminal { position: relative; right: auto; bottom: auto; margin: 10px auto 0; transform: rotate(-1deg); }
-  .admin-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+/* ============================================================================
+   MAXIMALISTIC DESIGN SYSTEM (v3.2)
+   Rich, Bold, Layered, High-Energy Cyber & Clinical Aesthetics
+============================================================================ */
+
+/* Google Fonts Classes */
+.font-bebas { font-family: 'Bebas Neue', sans-serif; }
+.font-playfair { font-family: 'Playfair Display', Georgia, serif; }
+.font-space { font-family: 'Space Grotesk', sans-serif; }
+.font-space-mono { font-family: 'Space Mono', monospace; }
+.font-jetbrains { font-family: 'JetBrains Mono', monospace; }
+.font-outfit { font-family: 'Outfit', sans-serif; }
+
+/* Maximalist Keyframe Animations */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(30, 255, 160, 0.4), 0 0 30px rgba(0, 240, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(30, 255, 160, 0.8), 0 0 60px rgba(0, 240, 255, 0.5), 0 0 80px rgba(168, 85, 247, 0.3);
+  }
 }
-@media (max-width: 640px) {
-  .top-tools { right: 67px; top: 15px; }
-  .tool-button span { display: none; }
-  .admin-grid { grid-template-columns: 1fr 1fr; }
-  .admin-row { grid-template-columns: 1fr 76px 68px; }
-  .admin-row > :nth-child(3) { display: none; }
-  .admin-row.header > :nth-child(3) { display: none; }
-  .home-terminal { width: 245px; }
+
+@keyframes colorShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-12px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(-24px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-12px) rotate(-2deg);
+  }
+}
+
+@keyframes spinOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes scanlineMove {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes shimmerEffect {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes ecgPulse {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Utility Animation Classes */
+.animate-glow-pulse {
+  animation: glowPulse 2.5s infinite ease-in-out;
+}
+
+.animate-color-shift {
+  background-size: 200% 200%;
+  animation: colorShift 5s infinite ease-in-out;
+}
+
+.animate-float-slow {
+  animation: floatSlow 5s infinite ease-in-out;
+}
+
+.animate-spin-orbit {
+  animation: spinOrbit 12s infinite linear;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background-size: 1000px 100%;
+  animation: shimmerEffect 3s infinite linear;
+}
+
+/* Maximalist Glow Shadows */
+.glow-emerald {
+  box-shadow: 0 0 25px rgba(30, 255, 160, 0.4), 0 0 50px rgba(30, 255, 160, 0.2);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), 0 0 50px rgba(0, 240, 255, 0.2);
+}
+
+.glow-purple {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.4), 0 0 50px rgba(168, 85, 247, 0.2);
+}
+
+.glow-gold {
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), 0 0 50px rgba(255, 215, 0, 0.2);
+}
+
+/* Maximalist Text Glows */
+.text-glow-emerald {
+  text-shadow: 0 0 10px rgba(30, 255, 160, 0.8), 0 0 25px rgba(30, 255, 160, 0.5), 0 0 40px rgba(0, 240, 255, 0.3);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 25px rgba(0, 240, 255, 0.5), 0 0 40px rgba(168, 85, 247, 0.3);
+}
+
+.text-glow-gold {
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 25px rgba(255, 199, 0, 0.5);
+}
+
+/* Gradient Text Multi-Color */
+.text-gradient-maximalist {
+  background: linear-gradient(135deg, #1EFFA0 0%, #00F0FF 40%, #A78BFA 70%, #FFD700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scanlines Overlay */
+.scanlines-overlay {
+  position: relative;
+}
+.scanlines-overlay::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  z-index: 2;
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
 }
