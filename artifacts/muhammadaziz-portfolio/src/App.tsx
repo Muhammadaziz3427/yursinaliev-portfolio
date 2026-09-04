@@ -82,11 +82,14 @@ import {
   MedicalLearningModal,
   GalleryModal
 } from '@/components/Admin/AdminModalsPart2';
-import {
-  MaximalistHeroBackground,
-  LiveECGTelemetry,
-  MaximalistCard3D
-} from '@/components/Maximalist/MaximalistHUD';
+import { ParticleMatrixCanvas } from '@/components/Maximalist/ParticleMatrixCanvas';
+import { CyberTicker } from '@/components/Maximalist/CyberTicker';
+import { LiveBiometricHUD } from '@/components/Maximalist/LiveBiometricHUD';
+import { MaximalistCard3D } from '@/components/Maximalist/MaximalistCard3D';
+import { CommandHUD } from '@/components/Maximalist/CommandHUD';
+import { MaximalistNavbar } from '@/components/Maximalist/MaximalistNavbar';
+import { MaximalistFooter } from '@/components/Maximalist/MaximalistFooter';
+import { soundFX } from '@/components/Maximalist/SoundFX';
 import {
   type SiteConfig,
   type TimelineMilestone,
@@ -499,10 +502,16 @@ function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      <div className="site-shell min-h-screen bg-[#0B0F17] text-[#E2E8F0] selection:bg-emerald-500/30 selection:text-emerald-300">
+      <div className="site-shell min-h-screen bg-[#070A12] text-[#E2E8F0] selection:bg-emerald-500/30 selection:text-emerald-300 relative overflow-x-hidden">
+        {/* Continuous Running Cyber Ticker Bar */}
+        <CyberTicker />
+
+        {/* 60FPS Interactive Canvas Particle Synapse Matrix */}
+        <ParticleMatrixCanvas />
+
         {/* Desktop Left Rail Navigation */}
-        <aside className="desktop-rail hidden md:flex fixed top-0 left-0 bottom-0 w-64 border-r border-slate-800/80 bg-[#0B0F17]/90 backdrop-blur-2xl flex-col p-6 z-40 overflow-y-auto" aria-label="Main Navigation">
-          <Link href="/" className="mb-8 block group">
+        <aside className="desktop-rail hidden md:flex fixed top-9 left-0 bottom-0 w-64 border-r border-slate-800/80 bg-[#070A12]/90 backdrop-blur-2xl flex-col p-6 z-40 overflow-y-auto" aria-label="Main Navigation">
+          <Link href="/" className="mb-8 block group" onClick={() => soundFX.playClick()}>
             <BrandMark config={siteConfig} />
           </Link>
 
@@ -513,24 +522,26 @@ function SiteShell({ children }: { children: ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-mono transition-all ${
+                  onClick={() => soundFX.playClick()}
+                  onMouseEnter={() => soundFX.playHover()}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono transition-all ${
                     isActive(item.href)
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(0,245,160,0.12)] font-semibold'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/10 text-emerald-300 border border-emerald-400/40 shadow-[0_0_20px_rgba(30,255,160,0.2)] font-semibold'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Icon size={13} className={isActive(item.href) ? 'text-emerald-400' : 'text-slate-500'} />
+                    <Icon size={13} className={isActive(item.href) ? 'text-emerald-400 animate-pulse' : 'text-slate-500'} />
                     <span>{t(item.key)}</span>
                   </span>
-                  <span className="text-[10px] text-slate-600">0{idx}</span>
+                  <span className="text-[10px] text-slate-600 font-mono">0{idx}</span>
                 </Link>
               );
             })}
           </nav>
 
           <div className="mt-auto pt-6 border-t border-slate-800/80 space-y-4">
-            <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
+            <div className="flex items-center gap-2 text-[11px] font-mono text-slate-300">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -540,22 +551,22 @@ function SiteShell({ children }: { children: ReactNode }) {
 
             <div className="flex items-center gap-3 text-slate-400">
               {siteConfig.github_url && (
-                <a href={siteConfig.github_url} target="_blank" rel="noreferrer" className="hover:text-emerald-400 transition-colors" title="GitHub">
+                <a href={siteConfig.github_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-emerald-400 transition-colors" title="GitHub">
                   <Github size={15} />
                 </a>
               )}
               {siteConfig.linkedin_url && (
-                <a href={siteConfig.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors" title="LinkedIn">
+                <a href={siteConfig.linkedin_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-cyan-400 transition-colors" title="LinkedIn">
                   <Linkedin size={15} />
                 </a>
               )}
               {siteConfig.twitter_url && (
-                <a href={siteConfig.twitter_url} target="_blank" rel="noreferrer" className="hover:text-pink-400 transition-colors" title="Twitter/X">
+                <a href={siteConfig.twitter_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-pink-400 transition-colors" title="Twitter/X">
                   <Twitter size={15} />
                 </a>
               )}
               {siteConfig.telegram_url && (
-                <a href={siteConfig.telegram_url} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors" title="Telegram">
+                <a href={siteConfig.telegram_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-blue-400 transition-colors" title="Telegram">
                   <Send size={15} />
                 </a>
               )}
@@ -568,14 +579,17 @@ function SiteShell({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0B0F17]/95 backdrop-blur-xl sticky top-0 z-40">
-          <Link href="/">
+        <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#070A12]/95 backdrop-blur-xl sticky top-0 z-40">
+          <Link href="/" onClick={() => soundFX.playClick()}>
             <BrandMark config={siteConfig} />
           </Link>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setCommandOpen(true)}
+              onClick={() => {
+                soundFX.playClick();
+                setCommandOpen(true);
+              }}
               className="p-2 text-slate-400 hover:text-emerald-400 border border-slate-800 rounded-lg bg-slate-900/60"
               aria-label="Search"
             >
@@ -583,7 +597,10 @@ function SiteShell({ children }: { children: ReactNode }) {
             </button>
             <button
               type="button"
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => {
+                soundFX.playClick();
+                setMenuOpen(!menuOpen);
+              }}
               className="p-2 text-slate-400 hover:text-emerald-400 border border-slate-800 rounded-lg bg-slate-900/60"
               aria-label="Toggle Navigation"
             >
@@ -592,13 +609,17 @@ function SiteShell({ children }: { children: ReactNode }) {
           </div>
 
           {menuOpen && (
-            <div className="absolute top-full left-0 right-0 p-4 bg-[#0B0F17] border-b border-slate-800 flex flex-col gap-1.5 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 p-4 bg-[#070A12] border-b border-slate-800 flex flex-col gap-1.5 shadow-2xl max-h-[80vh] overflow-y-auto z-50">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => {
+                      soundFX.playClick();
+                      setMenuOpen(false);
+                    }}
                     className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-mono ${
                       isActive(item.href) ? 'bg-emerald-500/15 text-emerald-400 font-bold' : 'text-slate-300'
                     }`}
@@ -608,7 +629,14 @@ function SiteShell({ children }: { children: ReactNode }) {
                   </Link>
                 );
               })}
-              <Link href="/admin" className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-mono text-cyan-400 border border-cyan-500/30 mt-2">
+              <Link
+                href="/admin"
+                onClick={() => {
+                  soundFX.playClick();
+                  setMenuOpen(false);
+                }}
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-mono text-cyan-400 border border-cyan-500/30 mt-2"
+              >
                 <ShieldCheck size={14} />
                 <span>{t('admin')}</span>
               </Link>
@@ -616,36 +644,44 @@ function SiteShell({ children }: { children: ReactNode }) {
           )}
         </header>
 
-        {/* Top Toolbar */}
-        <div className="top-tools fixed top-5 right-6 z-30 flex items-center gap-2">
+        {/* Top Floating Action Toolbar */}
+        <div className="top-tools fixed top-12 right-6 z-30 flex items-center gap-2">
           <button
             type="button"
-            className="tool-button hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-slate-300 border border-slate-700/80 rounded-lg bg-[#131B27]/80 hover:border-emerald-400/50 hover:text-emerald-300 backdrop-blur-xl transition-all shadow-lg"
-            onClick={() => setCommandOpen(true)}
+            className="tool-button hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-slate-200 border border-cyan-500/30 rounded-xl bg-[#0e1424]/90 hover:border-cyan-400/60 hover:text-cyan-300 backdrop-blur-xl transition-all shadow-[0_0_20px_rgba(0,240,255,0.15)]"
+            onClick={() => {
+              soundFX.playClick();
+              setCommandOpen(true);
+            }}
+            onMouseEnter={() => soundFX.playHover()}
           >
-            <Command size={13} className="text-emerald-400" />
-            <span>Search</span>
-            <kbd className="px-1.5 py-0.5 text-[9px] bg-slate-800 rounded border border-slate-700 text-slate-400">⌘K</kbd>
+            <Command size={13} className="text-cyan-400 animate-pulse" />
+            <span>Command HUD</span>
+            <kbd className="px-1.5 py-0.5 text-[9px] bg-white/10 rounded border border-white/10 text-cyan-300 font-mono">⌘K</kbd>
           </button>
 
           <LanguageDropdown language={language} onChange={setLanguage} />
 
           <Link
             href="/admin"
-            className="tool-button flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono text-slate-300 border border-slate-700/80 rounded-lg bg-[#131B27]/80 hover:border-cyan-400/50 hover:text-cyan-300 backdrop-blur-xl transition-all shadow-lg"
+            onClick={() => soundFX.playClick()}
+            onMouseEnter={() => soundFX.playHover()}
+            className="tool-button flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/40 rounded-xl bg-[#0e1424]/90 hover:border-emerald-400 hover:text-white backdrop-blur-xl transition-all shadow-[0_0_20px_rgba(30,255,160,0.2)]"
             title="Admin Security Zone"
           >
-            <ShieldCheck size={14} className="text-cyan-400" />
-            <span className="hidden sm:inline">Admin</span>
+            <ShieldCheck size={14} className="text-emerald-400" />
+            <span className="hidden sm:inline">CMS Admin</span>
           </Link>
         </div>
 
         {/* Main Content Area */}
-        <div className="md:pl-64">
-          <main>{children}</main>
+        <div className="md:pl-64 flex flex-col min-h-screen">
+          <main className="flex-1">{children}</main>
+          <MaximalistFooter siteConfig={siteConfig} />
         </div>
 
-        {commandOpen && <CommandPaletteModal onClose={() => setCommandOpen(false)} />}
+        {/* Global Keyboard Command HUD */}
+        <CommandHUD isOpen={commandOpen} onClose={() => setCommandOpen(false)} />
       </div>
     </LanguageContext.Provider>
   );
@@ -860,7 +896,6 @@ function HomePage() {
   });
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>(fallbackProjects);
   const [latestEssays, setLatestEssays] = useState<Essay[]>(fallbackEssays);
-  const [latestTips, setLatestTips] = useState<QuickTip[]>([]);
 
   useEffect(() => {
     getSiteConfig().then((cfg) => {
@@ -892,19 +927,15 @@ function HomePage() {
 
       if (p.status === 'fulfilled' && p.value.length > 0) setFeaturedProjects(p.value.slice(0, 2));
       if (e.status === 'fulfilled' && e.value.length > 0) setLatestEssays(e.value.slice(0, 2));
-      if (tp.status === 'fulfilled' && tp.value.length > 0) setLatestTips(tp.value.slice(0, 3));
     });
   }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background Interactive Layer */}
-      <MaximalistHeroBackground />
-
-      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-20 space-y-28">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-24">
         {/* Hero Section */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-8">
-          <div className="lg:col-span-7 space-y-7">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pt-4">
+          <div className="lg:col-span-7 space-y-6">
             <div className="flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300 text-xs font-mono shadow-[0_0_20px_rgba(30,255,160,0.2)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -919,25 +950,27 @@ function HomePage() {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="font-space text-xs uppercase tracking-[0.3em] text-emerald-400 font-bold">
                 CLINICAL PRECISION & CYBER ASSURANCE
               </div>
               <h1 className="font-bebas text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-slate-100 leading-[0.9] text-glow-emerald">
                 {config.name.split(' ')[0]} <br />
-                <span className="font-playfair text-gradient-maximalist italic font-normal tracking-normal">
+                <span className="font-serif text-gradient-maximalist italic font-normal tracking-normal">
                   {config.name.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
                 </span>
               </h1>
             </div>
 
-            <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-sans max-w-xl">
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-space max-w-xl">
               {config.headline || t('heroLead')}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 href="/projects"
+                onClick={() => soundFX.playClick()}
+                onMouseEnter={() => soundFX.playHover()}
                 className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-mono text-xs font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-[0_0_30px_rgba(30,255,160,0.5)] active:scale-95"
               >
                 {t('selectedWork')} <ArrowRight size={15} />
@@ -948,14 +981,18 @@ function HomePage() {
                   href={config.resume_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#131B27]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
+                  onClick={() => soundFX.playClick()}
+                  onMouseEnter={() => soundFX.playHover()}
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#0e1424]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
                 >
                   <Download size={15} className="text-cyan-400" /> {t('downloadResume')}
                 </a>
               ) : (
                 <Link
                   href="/medical"
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#131B27]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
+                  onClick={() => soundFX.playClick()}
+                  onMouseEnter={() => soundFX.playHover()}
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#0e1424]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
                 >
                   <Stethoscope size={15} /> Medical Learning
                 </Link>
@@ -963,15 +1000,16 @@ function HomePage() {
             </div>
           </div>
 
-          <div className="lg:col-span-5 space-y-6">
-            <LiveECGTelemetry />
+          <div className="lg:col-span-5 space-y-5">
+            {/* Interactive Live Biometric Telemetry HUD with Controllable ECG */}
+            <LiveBiometricHUD />
             <ActivityLog />
           </div>
         </section>
 
-        {/* Dynamic Skills Bar */}
+        {/* Dynamic Skills Matrix */}
         {config.skills && config.skills.length > 0 && (
-          <section className="space-y-4">
+          <section className="space-y-3">
             <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">
               Core Expertise & Technical Stack
             </div>
@@ -979,7 +1017,8 @@ function HomePage() {
               {config.skills.map((skill) => (
                 <span
                   key={skill}
-                  className="px-4 py-2 rounded-xl bg-[#131B27]/80 border border-slate-700/80 text-xs font-mono text-slate-200 hover:border-emerald-400 hover:text-emerald-300 hover:shadow-[0_0_20px_rgba(30,255,160,0.25)] transition-all hover:scale-105"
+                  onMouseEnter={() => soundFX.playHover()}
+                  className="px-4 py-2 rounded-xl bg-[#0e1424]/85 border border-slate-700/80 text-xs font-mono text-slate-200 hover:border-emerald-400 hover:text-emerald-300 hover:shadow-[0_0_20px_rgba(30,255,160,0.25)] transition-all hover:scale-105 select-none"
                 >
                   {skill}
                 </span>
@@ -992,7 +1031,7 @@ function HomePage() {
         {config.quote && (
           <section className="p-8 rounded-3xl border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-500/15 via-purple-500/10 to-transparent shadow-[0_0_40px_rgba(30,255,160,0.08)]">
             <Quote size={32} className="text-emerald-400 mb-3 animate-pulse" />
-            <p className="text-lg sm:text-2xl text-slate-100 font-playfair italic leading-relaxed">
+            <p className="text-lg sm:text-2xl text-slate-100 font-serif italic leading-relaxed">
               "{config.quote}"
             </p>
             <div className="font-space text-xs text-emerald-400 uppercase tracking-widest mt-4 font-bold">
@@ -1001,67 +1040,75 @@ function HomePage() {
           </section>
         )}
 
-        {/* Dynamic Aggregated Quick Stats */}
+        {/* Dynamic Aggregated 6-Metric Stat Deck */}
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { label: 'Projects', count: stats.projects, href: '/projects', icon: Code, color: 'text-emerald-400', glow: 'hover:shadow-[0_0_25px_rgba(30,255,160,0.3)]' },
-            { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers, color: 'text-cyan-400', glow: 'hover:shadow-[0_0_25px_rgba(0,240,255,0.3)]' },
-            { label: 'Books Read', count: stats.books, href: '/books', icon: BookOpen, color: 'text-amber-400', glow: 'hover:shadow-[0_0_25px_rgba(255,215,0,0.3)]' },
-            { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass, color: 'text-teal-400', glow: 'hover:shadow-[0_0_25px_rgba(45,212,191,0.3)]' },
-            { label: 'Security Notes', count: stats.security, href: '/security', icon: Shield, color: 'text-pink-400', glow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]' },
-            { label: 'Medical Topics', count: stats.medical, href: '/medical', icon: Stethoscope, color: 'text-blue-400', glow: 'hover:shadow-[0_0_25px_rgba(59,130,246,0.3)]' },
+            { label: 'Projects', count: stats.projects, href: '/projects', icon: Code, glowColor: 'emerald' as const },
+            { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers, glowColor: 'cyan' as const },
+            { label: 'Books Read', count: stats.books, href: '/books', icon: BookOpen, glowColor: 'gold' as const },
+            { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass, glowColor: 'emerald' as const },
+            { label: 'Security Logs', count: stats.security, href: '/security', icon: Shield, glowColor: 'purple' as const },
+            { label: 'Medical AI', count: stats.medical, href: '/medical', icon: Stethoscope, glowColor: 'cyan' as const },
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`p-5 rounded-2xl border border-slate-800 bg-[#131B27]/80 hover:border-emerald-400/60 transition-all hover:scale-105 group block ${item.glow}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-3xl font-bold font-bebas text-slate-100">{item.count}</span>
-                  <Icon size={18} className={item.color} />
-                </div>
-                <div className="text-xs font-mono text-slate-400 group-hover:text-emerald-300 transition-colors">
-                  {item.label} →
-                </div>
-              </Link>
+              <MaximalistCard3D key={item.label} glowColor={item.glowColor}>
+                <Link
+                  href={item.href}
+                  className="p-5 block space-y-2 group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-bold font-bebas text-slate-100 group-hover:text-white transition-colors">{item.count}</span>
+                    <Icon size={18} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <div className="text-xs font-mono text-slate-400 group-hover:text-cyan-300 transition-colors">
+                    {item.label} →
+                  </div>
+                </Link>
+              </MaximalistCard3D>
             );
           })}
         </section>
 
-        {/* 10 Sections Explore Grid */}
+        {/* 10 Sections Cyber-Bento Grid */}
         <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
-              <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">Explore Blueprint</div>
+              <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">Quantum Blueprint</div>
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">All 10 Dynamic Modules</h2>
             </div>
-            <span className="text-xs font-mono text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">100% Admin Powered</span>
+            <span className="text-xs font-mono text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+              ⚡ Live Supabase Engine
+            </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {[
-              { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code },
-              { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers },
-              { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen },
-              { title: 'Travel', desc: 'Expeditions log', href: '/travel', icon: Compass },
-              { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2 },
-              { title: 'Security', desc: 'Zero-trust lab', href: '/security', icon: Shield },
-              { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope },
-              { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb },
-              { title: 'Gallery', desc: 'Anatomy plates', href: '/gallery', icon: Eye },
-              { title: 'About', desc: 'Dual-domain bio', href: '/about', icon: Sparkles },
+              { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code, glow: 'emerald' as const, badge: `${stats.projects} entries` },
+              { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers, glow: 'cyan' as const, badge: `${stats.essays} logs` },
+              { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen, glow: 'gold' as const, badge: `${stats.books} books` },
+              { title: 'Travel', desc: 'Expeditions log', href: '/travel', icon: Compass, glow: 'emerald' as const, badge: `${stats.travels} spots` },
+              { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2, glow: 'purple' as const, badge: `${stats.games} labs` },
+              { title: 'Security', desc: 'Zero-trust lab', href: '/security', icon: Shield, glow: 'rose' as const, badge: `${stats.security} notes` },
+              { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope, glow: 'cyan' as const, badge: `${stats.medical} topics` },
+              { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb, glow: 'gold' as const, badge: `${stats.tips} tips` },
+              { title: 'Gallery', desc: 'Anatomy plates', href: '/gallery', icon: Eye, glow: 'purple' as const, badge: `${stats.gallery} items` },
+              { title: 'About', desc: 'Dual-domain bio', href: '/about', icon: Sparkles, glow: 'emerald' as const, badge: 'Odyssey' },
             ].map((sec) => {
               const Icon = sec.icon;
               return (
-                <MaximalistCard3D key={sec.title}>
+                <MaximalistCard3D key={sec.title} glowColor={sec.glow}>
                   <Link
                     href={sec.href}
-                    className="p-5 rounded-2xl border border-slate-800 bg-[#131B27]/80 hover:border-emerald-400/50 hover:bg-[#131B27] transition-all group block shadow-lg"
+                    className="p-5 block group"
                   >
-                    <Icon size={22} className="text-emerald-400 mb-3 group-hover:scale-125 transition-transform" />
-                    <h3 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <Icon size={22} className="text-cyan-400 group-hover:scale-125 transition-transform" />
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-gray-400 group-hover:text-cyan-300">
+                        {sec.badge}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-100 group-hover:text-cyan-300 transition-colors font-space">
                       {sec.title}
                     </h3>
                     <p className="text-[11px] font-mono text-slate-400 mt-1">{sec.desc}</p>
@@ -1072,24 +1119,29 @@ function HomePage() {
           </div>
         </section>
 
-        {/* Featured Projects */}
+        {/* Featured Projects Deck */}
         <section className="space-y-8">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
               <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">High-Assurance Code</div>
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">Selected Projects</h2>
             </div>
-            <Link href="/projects" className="text-xs font-mono text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+            <Link 
+              href="/projects" 
+              onClick={() => soundFX.playClick()}
+              onMouseEnter={() => soundFX.playHover()}
+              className="text-xs font-mono text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+            >
               View all ({stats.projects}) <ArrowRight size={14} />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {featuredProjects.map((p) => (
-              <MaximalistCard3D key={p.slug}>
+              <MaximalistCard3D key={p.slug} glowColor="emerald">
                 <Link
                   href={`/projects/${p.slug}`}
-                  className="p-7 rounded-2xl border border-slate-800 bg-[#131B27]/90 hover:border-emerald-400/60 hover:shadow-[0_0_35px_rgba(30,255,160,0.2)] transition-all group block space-y-4"
+                  className="p-7 block space-y-4 group"
                 >
                   <div className="flex items-center justify-between text-xs font-mono text-emerald-400">
                     <span className="font-bold">{p.number || '01'} / {p.category}</span>
@@ -1098,10 +1150,10 @@ function HomePage() {
                   <h3 className="text-2xl font-bold text-slate-100 group-hover:text-emerald-300 transition-colors font-serif">
                     {p.name}
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">{p.summary}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 font-space">{p.summary}</p>
                   <div className="flex flex-wrap gap-1.5 pt-2">
                     {(p.techStack || p.tech_stack || []).map((tech) => (
-                      <span key={tech} className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-mono text-emerald-300">
+                      <span key={tech} className="px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-700 text-[10px] font-mono text-emerald-300">
                         {tech}
                       </span>
                     ))}
@@ -1112,24 +1164,29 @@ function HomePage() {
           </div>
         </section>
 
-        {/* Latest Essays */}
+        {/* Latest Essays Deck */}
         <section className="space-y-8">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
               <div className="font-space text-xs text-cyan-400 uppercase tracking-[0.25em] font-bold">Clinical & Cyber Reflections</div>
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">Recent Essays</h2>
             </div>
-            <Link href="/essays" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 font-bold">
+            <Link 
+              href="/essays" 
+              onClick={() => soundFX.playClick()}
+              onMouseEnter={() => soundFX.playHover()}
+              className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+            >
               Read Archive <ArrowRight size={14} />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {latestEssays.map((e) => (
-              <MaximalistCard3D key={e.slug}>
+              <MaximalistCard3D key={e.slug} glowColor="cyan">
                 <Link
                   href={`/essays/${e.slug}`}
-                  className="p-7 rounded-2xl border border-slate-800 bg-[#131B27]/90 hover:border-cyan-400/60 hover:shadow-[0_0_35px_rgba(0,240,255,0.2)] transition-all group block space-y-3"
+                  className="p-7 block space-y-3 group"
                 >
                   <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
                     <span className="font-bold">{e.type || e.category}</span>
@@ -1138,7 +1195,7 @@ function HomePage() {
                   <h3 className="text-2xl font-bold text-slate-100 group-hover:text-cyan-300 transition-colors font-serif">
                     {e.title}
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">{e.dek}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 font-space">{e.dek}</p>
                 </Link>
               </MaximalistCard3D>
             ))}

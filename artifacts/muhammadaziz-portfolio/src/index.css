@@ -999,3 +999,41 @@ body {
   background-size: 100% 3px, 6px 100%;
   pointer-events: none;
 }
+
+@keyframes tickerAnimation {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: tickerAnimation 30s linear infinite;
+}
+
+@keyframes scanlineAnim {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(1000%); }
+}
+
+.animate-scanline {
+  animation: scanlineAnim 3.5s linear infinite;
+}
+
+.font-bebas {
+  font-family: 'Bebas Neue', 'Outfit', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+.font-space {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Space Mono', monospace;
+}
+
+.font-serif {
+  font-family: 'Playfair Display', 'Instrument Serif', Georgia, serif;
+}
+
