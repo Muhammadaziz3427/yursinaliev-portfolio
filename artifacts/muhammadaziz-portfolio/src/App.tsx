@@ -829,15 +829,8 @@ function HomePage() {
             </div>
           </motion.div>
 
-          {/* Right: Brain Constellation (hero-local, not the fixed one) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="hidden lg:block relative h-[500px]"
-          >
-            <BrainConstellationCanvas />
-          </motion.div>
+          {/* Right: Hero Stage for the 3D Constellation background */}
+          <div className="hidden lg:block relative h-[500px] pointer-events-none" aria-hidden="true" />
         </section>
 
         {/* ═══════════════════════════════════════════════════
