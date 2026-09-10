@@ -82,14 +82,9 @@ import {
   MedicalLearningModal,
   GalleryModal
 } from '@/components/Admin/AdminModalsPart2';
-import { ParticleMatrixCanvas } from '@/components/Maximalist/ParticleMatrixCanvas';
-import { CyberTicker } from '@/components/Maximalist/CyberTicker';
-import { LiveBiometricHUD } from '@/components/Maximalist/LiveBiometricHUD';
-import { MaximalistCard3D } from '@/components/Maximalist/MaximalistCard3D';
-import { CommandHUD } from '@/components/Maximalist/CommandHUD';
-import { MaximalistNavbar } from '@/components/Maximalist/MaximalistNavbar';
-import { MaximalistFooter } from '@/components/Maximalist/MaximalistFooter';
-import { soundFX } from '@/components/Maximalist/SoundFX';
+import { BrainConstellationCanvas } from '@/components/Dala/BrainConstellationCanvas';
+import { DalaNavbar } from '@/components/Dala/DalaNavbar';
+import { DalaFooter } from '@/components/Dala/DalaFooter';
 import {
   type SiteConfig,
   type TimelineMilestone,
@@ -502,186 +497,29 @@ function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      <div className="site-shell min-h-screen bg-[#070A12] text-[#E2E8F0] selection:bg-emerald-500/30 selection:text-emerald-300 relative overflow-x-hidden">
-        {/* Continuous Running Cyber Ticker Bar */}
-        <CyberTicker />
-
-        {/* 60FPS Interactive Canvas Particle Synapse Matrix */}
-        <ParticleMatrixCanvas />
-
-        {/* Desktop Left Rail Navigation */}
-        <aside className="desktop-rail hidden md:flex fixed top-9 left-0 bottom-0 w-64 border-r border-slate-800/80 bg-[#070A12]/90 backdrop-blur-2xl flex-col p-6 z-40 overflow-y-auto" aria-label="Main Navigation">
-          <Link href="/" className="mb-8 block group" onClick={() => soundFX.playClick()}>
-            <BrandMark config={siteConfig} />
-          </Link>
-
-          <nav className="flex flex-col gap-1">
-            {navItems.map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => soundFX.playClick()}
-                  onMouseEnter={() => soundFX.playHover()}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono transition-all ${
-                    isActive(item.href)
-                      ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/10 text-emerald-300 border border-emerald-400/40 shadow-[0_0_20px_rgba(30,255,160,0.2)] font-semibold'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon size={13} className={isActive(item.href) ? 'text-emerald-400 animate-pulse' : 'text-slate-500'} />
-                    <span>{t(item.key)}</span>
-                  </span>
-                  <span className="text-[10px] text-slate-600 font-mono">0{idx}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="mt-auto pt-6 border-t border-slate-800/80 space-y-4">
-            <div className="flex items-center gap-2 text-[11px] font-mono text-slate-300">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="truncate">{siteConfig.status_text || 'Tashkent · Dual-Core Practice'}</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-slate-400">
-              {siteConfig.github_url && (
-                <a href={siteConfig.github_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-emerald-400 transition-colors" title="GitHub">
-                  <Github size={15} />
-                </a>
-              )}
-              {siteConfig.linkedin_url && (
-                <a href={siteConfig.linkedin_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-cyan-400 transition-colors" title="LinkedIn">
-                  <Linkedin size={15} />
-                </a>
-              )}
-              {siteConfig.twitter_url && (
-                <a href={siteConfig.twitter_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-pink-400 transition-colors" title="Twitter/X">
-                  <Twitter size={15} />
-                </a>
-              )}
-              {siteConfig.telegram_url && (
-                <a href={siteConfig.telegram_url} target="_blank" rel="noreferrer" onMouseEnter={() => soundFX.playHover()} className="hover:text-blue-400 transition-colors" title="Telegram">
-                  <Send size={15} />
-                </a>
-              )}
-            </div>
-
-            <div className="text-[10px] font-mono text-slate-500">
-              {siteConfig.name} · © 2024—26
-            </div>
-          </div>
-        </aside>
-
-        {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#070A12]/95 backdrop-blur-xl sticky top-0 z-40">
-          <Link href="/" onClick={() => soundFX.playClick()}>
-            <BrandMark config={siteConfig} />
-          </Link>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playClick();
-                setCommandOpen(true);
-              }}
-              className="p-2 text-slate-400 hover:text-emerald-400 border border-slate-800 rounded-lg bg-slate-900/60"
-              aria-label="Search"
-            >
-              <Search size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playClick();
-                setMenuOpen(!menuOpen);
-              }}
-              className="p-2 text-slate-400 hover:text-emerald-400 border border-slate-800 rounded-lg bg-slate-900/60"
-              aria-label="Toggle Navigation"
-            >
-              {menuOpen ? <X size={16} /> : <Menu size={16} />}
-            </button>
-          </div>
-
-          {menuOpen && (
-            <div className="absolute top-full left-0 right-0 p-4 bg-[#070A12] border-b border-slate-800 flex flex-col gap-1.5 shadow-2xl max-h-[80vh] overflow-y-auto z-50">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => {
-                      soundFX.playClick();
-                      setMenuOpen(false);
-                    }}
-                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-mono ${
-                      isActive(item.href) ? 'bg-emerald-500/15 text-emerald-400 font-bold' : 'text-slate-300'
-                    }`}
-                  >
-                    <Icon size={14} className="text-emerald-400" />
-                    <span>{t(item.key)}</span>
-                  </Link>
-                );
-              })}
-              <Link
-                href="/admin"
-                onClick={() => {
-                  soundFX.playClick();
-                  setMenuOpen(false);
-                }}
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-mono text-cyan-400 border border-cyan-500/30 mt-2"
-              >
-                <ShieldCheck size={14} />
-                <span>{t('admin')}</span>
-              </Link>
-            </div>
-          )}
-        </header>
-
-        {/* Top Floating Action Toolbar */}
-        <div className="top-tools fixed top-12 right-6 z-30 flex items-center gap-2">
-          <button
-            type="button"
-            className="tool-button hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-slate-200 border border-cyan-500/30 rounded-xl bg-[#0e1424]/90 hover:border-cyan-400/60 hover:text-cyan-300 backdrop-blur-xl transition-all shadow-[0_0_20px_rgba(0,240,255,0.15)]"
-            onClick={() => {
-              soundFX.playClick();
-              setCommandOpen(true);
-            }}
-            onMouseEnter={() => soundFX.playHover()}
-          >
-            <Command size={13} className="text-cyan-400 animate-pulse" />
-            <span>Command HUD</span>
-            <kbd className="px-1.5 py-0.5 text-[9px] bg-white/10 rounded border border-white/10 text-cyan-300 font-mono">⌘K</kbd>
-          </button>
-
-          <LanguageDropdown language={language} onChange={setLanguage} />
-
-          <Link
-            href="/admin"
-            onClick={() => soundFX.playClick()}
-            onMouseEnter={() => soundFX.playHover()}
-            className="tool-button flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/40 rounded-xl bg-[#0e1424]/90 hover:border-emerald-400 hover:text-white backdrop-blur-xl transition-all shadow-[0_0_20px_rgba(30,255,160,0.2)]"
-            title="Admin Security Zone"
-          >
-            <ShieldCheck size={14} className="text-emerald-400" />
-            <span className="hidden sm:inline">CMS Admin</span>
-          </Link>
+      <div className="site-shell min-h-screen bg-black text-white selection:bg-[#8052ff]/30 selection:text-white relative overflow-x-hidden">
+        {/* Dala Brain Constellation fixed background */}
+        <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+          <BrainConstellationCanvas />
         </div>
+
+        {/* Dala Transparent Navbar */}
+        <DalaNavbar
+          language={language}
+          onLanguageChange={setLanguage}
+          t={t}
+        />
 
         {/* Main Content Area */}
-        <div className="md:pl-64 flex flex-col min-h-screen">
+        <div className="relative z-10 flex flex-col min-h-screen pt-[72px]">
           <main className="flex-1">{children}</main>
-          <MaximalistFooter siteConfig={siteConfig} />
+          <DalaFooter siteConfig={siteConfig} />
         </div>
 
-        {/* Global Keyboard Command HUD */}
-        <CommandHUD isOpen={commandOpen} onClose={() => setCommandOpen(false)} />
+        {/* Command Palette (Ctrl+K) */}
+        <AnimatePresence>
+          {commandOpen && <CommandPaletteModal onClose={() => setCommandOpen(false)} />}
+        </AnimatePresence>
       </div>
     </LanguageContext.Provider>
   );
@@ -931,276 +769,332 @@ function HomePage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-20 space-y-24">
-        {/* Hero Section */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pt-4">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300 text-xs font-mono shadow-[0_0_20px_rgba(30,255,160,0.2)]">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="font-bold">{config.status_text || 'Dual-Core Practice: Surgery & CyberSec'}</span>
-              </div>
+    <div className="relative min-h-screen">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 sm:px-10">
 
+        {/* ═══════════════════════════════════════════════════
+            HERO — Dala Two-Column Asymmetric
+        ═══════════════════════════════════════════════════ */}
+        <section className="min-h-[85vh] grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-16 lg:py-0">
+          {/* Left: Typography */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-8"
+          >
+            {/* Saffron Spark label */}
+            <div className="font-caption-amber flex items-center gap-3">
+              <span>{config.status_text || 'Surgery × CyberSec'}</span>
               {config.available_for_work && (
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/10 text-cyan-300 text-xs font-mono shadow-[0_0_20px_rgba(0,240,255,0.2)]">
-                  <Zap size={13} className="text-cyan-400" />
-                  <span className="font-bold">{t('availableBadge')}</span>
-                </div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8052ff]/10 border border-[#8052ff]/30 text-[#8052ff] text-[11px] font-semibold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8052ff] animate-pulse" />
+                  {t('availableBadge')}
+                </span>
               )}
             </div>
 
-            <div className="space-y-1">
-              <div className="font-space text-xs uppercase tracking-[0.3em] text-emerald-400 font-bold">
-                CLINICAL PRECISION & CYBER ASSURANCE
-              </div>
-              <h1 className="font-bebas text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-slate-100 leading-[0.9] text-glow-emerald">
-                {config.name.split(' ')[0]} <br />
-                <span className="font-serif text-gradient-maximalist italic font-normal tracking-normal">
-                  {config.name.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
-                </span>
-              </h1>
-            </div>
+            {/* Display Headline — 78-113px */}
+            <h1 className="font-display text-display-dala text-white">
+              {config.name?.split(' ')[0] || 'Muhammadaziz'}
+              <br />
+              <span className="text-[#9a9a9a]">
+                {config.name?.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
+              </span>
+            </h1>
 
-            <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-space max-w-xl">
+            {/* Ultra-light body copy */}
+            <p className="font-body-ultralight text-[#bdbdbd] max-w-md">
               {config.headline || t('heroLead')}
             </p>
 
+            {/* CTA Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                href="/projects"
-                onClick={() => soundFX.playClick()}
-                onMouseEnter={() => soundFX.playHover()}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-mono text-xs font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-[0_0_30px_rgba(30,255,160,0.5)] active:scale-95"
-              >
-                {t('selectedWork')} <ArrowRight size={15} />
+              <Link href="/projects" className="btn-electric-iris">
+                {t('selectedWork')}
+                <ArrowDownRight size={16} />
               </Link>
 
-              {config.resume_url ? (
+              {config.resume_url && (
                 <a
                   href={config.resume_url}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() => soundFX.playClick()}
-                  onMouseEnter={() => soundFX.playHover()}
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#0e1424]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
+                  className="link-ghost flex items-center gap-2 py-3"
                 >
-                  <Download size={15} className="text-cyan-400" /> {t('downloadResume')}
+                  <Download size={15} />
+                  {t('downloadResume')}
                 </a>
-              ) : (
-                <Link
-                  href="/medical"
-                  onClick={() => soundFX.playClick()}
-                  onMouseEnter={() => soundFX.playHover()}
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-cyan-400/50 bg-[#0e1424]/90 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider hover:border-cyan-300 hover:text-white transition-all shadow-[0_0_25px_rgba(0,240,255,0.25)] hover:scale-105"
-                >
-                  <Stethoscope size={15} /> Medical Learning
-                </Link>
               )}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="lg:col-span-5 space-y-5">
-            {/* Interactive Live Biometric Telemetry HUD with Controllable ECG */}
-            <LiveBiometricHUD />
-            <ActivityLog />
-          </div>
+          {/* Right: Brain Constellation (hero-local, not the fixed one) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="hidden lg:block relative h-[500px]"
+          >
+            <BrainConstellationCanvas />
+          </motion.div>
         </section>
 
-        {/* Dynamic Skills Matrix */}
+        {/* ═══════════════════════════════════════════════════
+            SKILLS — Floating on Void
+        ═══════════════════════════════════════════════════ */}
         {config.skills && config.skills.length > 0 && (
-          <section className="space-y-3">
-            <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">
-              Core Expertise & Technical Stack
-            </div>
-            <div className="flex flex-wrap gap-2.5">
+          <motion.section
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="py-20 space-y-6"
+          >
+            <h3 className="font-caption-amber text-xs">Core Expertise</h3>
+            <div className="flex flex-wrap gap-3">
               {config.skills.map((skill) => (
                 <span
                   key={skill}
-                  onMouseEnter={() => soundFX.playHover()}
-                  className="px-4 py-2 rounded-xl bg-[#0e1424]/85 border border-slate-700/80 text-xs font-mono text-slate-200 hover:border-emerald-400 hover:text-emerald-300 hover:shadow-[0_0_20px_rgba(30,255,160,0.25)] transition-all hover:scale-105 select-none"
+                  className="px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-sm font-light text-[#bdbdbd] hover:text-white hover:border-[#8052ff]/40 hover:bg-[#8052ff]/5 transition-all duration-300"
                 >
                   {skill}
                 </span>
               ))}
             </div>
-          </section>
+          </motion.section>
         )}
 
-        {/* Dynamic Philosophy Quote */}
+        {/* ═══════════════════════════════════════════════════
+            PHILOSOPHY QUOTE — Dala Void Style
+        ═══════════════════════════════════════════════════ */}
         {config.quote && (
-          <section className="p-8 rounded-3xl border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-500/15 via-purple-500/10 to-transparent shadow-[0_0_40px_rgba(30,255,160,0.08)]">
-            <Quote size={32} className="text-emerald-400 mb-3 animate-pulse" />
-            <p className="text-lg sm:text-2xl text-slate-100 font-serif italic leading-relaxed">
-              "{config.quote}"
-            </p>
-            <div className="font-space text-xs text-emerald-400 uppercase tracking-widest mt-4 font-bold">
-              — {config.name}
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="py-24 max-w-3xl"
+          >
+            <div className="space-y-6">
+              <div className="w-12 h-[2px] bg-[#8052ff]" />
+              <p className="text-heading-md-dala font-display text-white leading-snug">
+                "{config.quote}"
+              </p>
+              <p className="font-caption-amber text-xs">— {config.name}</p>
             </div>
-          </section>
+          </motion.section>
         )}
 
-        {/* Dynamic Aggregated 6-Metric Stat Deck */}
-        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* ═══════════════════════════════════════════════════
+            STAT COUNTERS — Floating on Void
+        ═══════════════════════════════════════════════════ */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="py-20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8"
+        >
           {[
-            { label: 'Projects', count: stats.projects, href: '/projects', icon: Code, glowColor: 'emerald' as const },
-            { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers, glowColor: 'cyan' as const },
-            { label: 'Books Read', count: stats.books, href: '/books', icon: BookOpen, glowColor: 'gold' as const },
-            { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass, glowColor: 'emerald' as const },
-            { label: 'Security Logs', count: stats.security, href: '/security', icon: Shield, glowColor: 'purple' as const },
-            { label: 'Medical AI', count: stats.medical, href: '/medical', icon: Stethoscope, glowColor: 'cyan' as const },
-          ].map((item) => {
+            { label: 'Projects', count: stats.projects, href: '/projects', icon: Code },
+            { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers },
+            { label: 'Books', count: stats.books, href: '/books', icon: BookOpen },
+            { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass },
+            { label: 'Security', count: stats.security, href: '/security', icon: Shield },
+            { label: 'Medical', count: stats.medical, href: '/medical', icon: Stethoscope },
+          ].map((item, i) => {
             const Icon = item.icon;
             return (
-              <MaximalistCard3D key={item.label} glowColor={item.glowColor}>
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+              >
                 <Link
                   href={item.href}
-                  className="p-5 block space-y-2 group"
+                  className="block group space-y-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold font-bebas text-slate-100 group-hover:text-white transition-colors">{item.count}</span>
-                    <Icon size={18} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <div className="w-8 h-[1px] bg-[#8052ff]/50 group-hover:bg-[#8052ff] group-hover:w-12 transition-all duration-300" />
+                  <div className="text-heading-sm-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
+                    {item.count}
                   </div>
-                  <div className="text-xs font-mono text-slate-400 group-hover:text-cyan-300 transition-colors">
-                    {item.label} →
+                  <div className="flex items-center gap-2 text-[#9a9a9a] text-xs font-light uppercase tracking-wider">
+                    <Icon size={13} />
+                    <span>{item.label}</span>
                   </div>
                 </Link>
-              </MaximalistCard3D>
+              </motion.div>
             );
           })}
-        </section>
+        </motion.section>
 
-        {/* 10 Sections Cyber-Bento Grid */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        {/* ═══════════════════════════════════════════════════
+            10 MODULES — Dala Grid (No Cards, Void-Floating)
+        ═══════════════════════════════════════════════════ */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="py-20 space-y-10"
+        >
+          <div className="flex items-center justify-between">
             <div>
-              <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">Quantum Blueprint</div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">All 10 Dynamic Modules</h2>
+              <h3 className="font-caption-amber text-xs mb-2">All Modules</h3>
+              <h2 className="text-heading-md-dala font-display text-white">Explore Everything</h2>
             </div>
-            <span className="text-xs font-mono text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-              ⚡ Live Supabase Engine
-            </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
             {[
-              { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code, glow: 'emerald' as const, badge: `${stats.projects} entries` },
-              { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers, glow: 'cyan' as const, badge: `${stats.essays} logs` },
-              { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen, glow: 'gold' as const, badge: `${stats.books} books` },
-              { title: 'Travel', desc: 'Expeditions log', href: '/travel', icon: Compass, glow: 'emerald' as const, badge: `${stats.travels} spots` },
-              { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2, glow: 'purple' as const, badge: `${stats.games} labs` },
-              { title: 'Security', desc: 'Zero-trust lab', href: '/security', icon: Shield, glow: 'rose' as const, badge: `${stats.security} notes` },
-              { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope, glow: 'cyan' as const, badge: `${stats.medical} topics` },
-              { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb, glow: 'gold' as const, badge: `${stats.tips} tips` },
-              { title: 'Gallery', desc: 'Anatomy plates', href: '/gallery', icon: Eye, glow: 'purple' as const, badge: `${stats.gallery} items` },
-              { title: 'About', desc: 'Dual-domain bio', href: '/about', icon: Sparkles, glow: 'emerald' as const, badge: 'Odyssey' },
-            ].map((sec) => {
+              { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code, badge: `${stats.projects}` },
+              { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers, badge: `${stats.essays}` },
+              { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen, badge: `${stats.books}` },
+              { title: 'Travel', desc: 'Expeditions', href: '/travel', icon: Compass, badge: `${stats.travels}` },
+              { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2, badge: `${stats.games}` },
+              { title: 'Security', desc: 'Zero-trust notes', href: '/security', icon: Shield, badge: `${stats.security}` },
+              { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope, badge: `${stats.medical}` },
+              { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb, badge: `${stats.tips}` },
+              { title: 'Gallery', desc: 'Visual collection', href: '/gallery', icon: Eye, badge: `${stats.gallery}` },
+              { title: 'About', desc: 'Full story', href: '/about', icon: Sparkles, badge: '→' },
+            ].map((sec, i) => {
               const Icon = sec.icon;
               return (
-                <MaximalistCard3D key={sec.title} glowColor={sec.glow}>
+                <motion.div
+                  key={sec.title}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.04 }}
+                >
                   <Link
                     href={sec.href}
-                    className="p-5 block group"
+                    className="block group py-5 border-t border-white/[0.04] hover:border-[#8052ff]/30 transition-all duration-300"
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <Icon size={22} className="text-cyan-400 group-hover:scale-125 transition-transform" />
-                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-gray-400 group-hover:text-cyan-300">
-                        {sec.badge}
-                      </span>
+                      <Icon size={18} className="text-[#9a9a9a] group-hover:text-[#8052ff] transition-colors duration-300" />
+                      <span className="text-[11px] text-[#9a9a9a]/60 font-light">{sec.badge}</span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-100 group-hover:text-cyan-300 transition-colors font-space">
+                    <h3 className="text-sm font-medium text-white group-hover:text-[#8052ff] transition-colors duration-300 mb-1">
                       {sec.title}
                     </h3>
-                    <p className="text-[11px] font-mono text-slate-400 mt-1">{sec.desc}</p>
+                    <p className="text-[12px] font-light text-[#9a9a9a]">{sec.desc}</p>
                   </Link>
-                </MaximalistCard3D>
+                </motion.div>
               );
             })}
           </div>
-        </section>
+        </motion.section>
 
-        {/* Featured Projects Deck */}
-        <section className="space-y-8">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        {/* ═══════════════════════════════════════════════════
+            FEATURED PROJECTS — Dala Void Style
+        ═══════════════════════════════════════════════════ */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="py-20 space-y-10"
+        >
+          <div className="flex items-center justify-between">
             <div>
-              <div className="font-space text-xs text-emerald-400 uppercase tracking-[0.25em] font-bold">High-Assurance Code</div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">Selected Projects</h2>
+              <h3 className="font-caption-amber text-xs mb-2">Selected Work</h3>
+              <h2 className="text-heading-md-dala font-display text-white">Projects</h2>
             </div>
-            <Link 
-              href="/projects" 
-              onClick={() => soundFX.playClick()}
-              onMouseEnter={() => soundFX.playHover()}
-              className="text-xs font-mono text-emerald-400 hover:underline flex items-center gap-1 font-bold"
-            >
+            <Link href="/projects" className="link-saffron flex items-center gap-1">
               View all ({stats.projects}) <ArrowRight size={14} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featuredProjects.map((p) => (
-              <MaximalistCard3D key={p.slug} glowColor="emerald">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {featuredProjects.map((p, i) => (
+              <motion.div
+                key={p.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
                 <Link
                   href={`/projects/${p.slug}`}
-                  className="p-7 block space-y-4 group"
+                  className="block group space-y-4"
                 >
-                  <div className="flex items-center justify-between text-xs font-mono text-emerald-400">
-                    <span className="font-bold">{p.number || '01'} / {p.category}</span>
-                    <span className="text-slate-500">{p.year}</span>
+                  <div className="flex items-center justify-between text-xs font-light">
+                    <span className="text-[#ffb829] uppercase tracking-wider">{p.number || '01'} / {p.category}</span>
+                    <span className="text-[#9a9a9a]">{p.year}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-100 group-hover:text-emerald-300 transition-colors font-serif">
+                  <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
                     {p.name}
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 font-space">{p.summary}</p>
-                  <div className="flex flex-wrap gap-1.5 pt-2">
+                  <p className="text-sm font-light text-[#bdbdbd] leading-relaxed line-clamp-3">
+                    {p.summary}
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
                     {(p.techStack || p.tech_stack || []).map((tech) => (
-                      <span key={tech} className="px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-700 text-[10px] font-mono text-emerald-300">
+                      <span key={tech} className="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] font-light text-[#9a9a9a]">
                         {tech}
                       </span>
                     ))}
                   </div>
+                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-[#8052ff]/20 transition-colors duration-500 mt-4" />
                 </Link>
-              </MaximalistCard3D>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
-        {/* Latest Essays Deck */}
-        <section className="space-y-8">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        {/* ═══════════════════════════════════════════════════
+            LATEST ESSAYS — Dala Void Style
+        ═══════════════════════════════════════════════════ */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="py-20 space-y-10 pb-32"
+        >
+          <div className="flex items-center justify-between">
             <div>
-              <div className="font-space text-xs text-cyan-400 uppercase tracking-[0.25em] font-bold">Clinical & Cyber Reflections</div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 font-serif">Recent Essays</h2>
+              <h3 className="font-caption-amber text-xs mb-2">Reflections</h3>
+              <h2 className="text-heading-md-dala font-display text-white">Recent Essays</h2>
             </div>
-            <Link 
-              href="/essays" 
-              onClick={() => soundFX.playClick()}
-              onMouseEnter={() => soundFX.playHover()}
-              className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 font-bold"
-            >
+            <Link href="/essays" className="link-saffron flex items-center gap-1">
               Read Archive <ArrowRight size={14} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {latestEssays.map((e) => (
-              <MaximalistCard3D key={e.slug} glowColor="cyan">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {latestEssays.map((e, i) => (
+              <motion.div
+                key={e.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
                 <Link
                   href={`/essays/${e.slug}`}
-                  className="p-7 block space-y-3 group"
+                  className="block group space-y-3"
                 >
-                  <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
-                    <span className="font-bold">{e.type || e.category}</span>
-                    <span className="text-slate-500">{e.read || '5 min read'}</span>
+                  <div className="flex items-center justify-between text-xs font-light">
+                    <span className="text-[#ffb829] uppercase tracking-wider">{e.type || e.category}</span>
+                    <span className="text-[#9a9a9a]">{e.read || '5 min read'}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-100 group-hover:text-cyan-300 transition-colors font-serif">
+                  <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
                     {e.title}
                   </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-3 font-space">{e.dek}</p>
+                  <p className="text-sm font-light text-[#bdbdbd] leading-relaxed line-clamp-3">
+                    {e.dek}
+                  </p>
+                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-[#8052ff]/20 transition-colors duration-500 mt-4" />
                 </Link>
-              </MaximalistCard3D>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
       </div>
     </div>
   );
