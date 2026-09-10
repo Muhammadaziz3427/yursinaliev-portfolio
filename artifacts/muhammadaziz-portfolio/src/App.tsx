@@ -736,7 +736,38 @@ function ActivityLog() {
 }
 
 // ==========================================
-// 6. HOME PAGE (DYNAMIC 10-MODULE DASHBOARD)
+// 5.5 DALA KINETIC TEXT REVEAL (splitTextRotateIn)
+// ==========================================
+function DalaReveal({
+  children,
+  className = '',
+  delay = 0,
+  rotate = 3,
+  y = '120%',
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  rotate?: number;
+  y?: string;
+}) {
+  return (
+    <div className="overflow-hidden">
+      <motion.div
+        initial={{ y, rotate, opacity: 0 }}
+        whileInView={{ y: '0%', rotate: 0, opacity: 1 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.9, delay, ease: [0.16, 1, 0.3, 1] }}
+        className={className}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+// ==========================================
+// 6. HOME PAGE (DALA EDITORIAL EXPERIENCE)
 // ==========================================
 function HomePage() {
   const { t } = useLocale();
@@ -750,7 +781,7 @@ function HomePage() {
     security: 3,
     medical: 3,
     tips: 5,
-    gallery: 5
+    gallery: 5,
   });
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>(fallbackProjects);
   const [latestEssays, setLatestEssays] = useState<Essay[]>(fallbackEssays);
@@ -769,7 +800,7 @@ function HomePage() {
       listSecurityNotes(),
       listMedicalLearning(),
       listQuickTips(),
-      listGallery()
+      listGallery(),
     ]).then(([p, e, b, tr, g, s, m, tp, gal]) => {
       setStats({
         projects: p.status === 'fulfilled' && p.value.length > 0 ? p.value.length : 4,
@@ -793,282 +824,227 @@ function HomePage() {
       <div className="relative z-10 max-w-[1280px] mx-auto px-6 sm:px-10">
 
         {/* ═══════════════════════════════════════════════════
-            HERO — Dala Two-Column Asymmetric
+            01. HERO — Dala Sculptural Asymmetric
         ═══════════════════════════════════════════════════ */}
-        <section className="min-h-[85vh] grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-16 lg:py-0">
-          {/* Left: Typography */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-8"
-          >
-            {/* Saffron Spark label */}
-            <div className="font-caption-amber flex items-center gap-3">
-              <span>{config.status_text || 'Surgery × CyberSec'}</span>
-              {config.available_for_work && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8052ff]/10 border border-[#8052ff]/30 text-[#8052ff] text-[11px] font-semibold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#8052ff] animate-pulse" />
-                  {t('availableBadge')}
-                </span>
-              )}
+        <section className="min-h-[88vh] grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center py-16 lg:py-0">
+          <div className="lg:col-span-7 space-y-8">
+            {/* Saffron Spark category label */}
+            <DalaReveal delay={0.05} rotate={0} y="100%">
+              <div className="font-caption-amber flex items-center gap-3">
+                <span>{config.status_text || 'Surgery × CyberSec'}</span>
+                {config.available_for_work && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8052ff]/10 border border-[#8052ff]/30 text-[#8052ff] text-[11px] font-semibold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8052ff] animate-pulse" />
+                    {t('availableBadge')}
+                  </span>
+                )}
+              </div>
+            </DalaReveal>
+
+            {/* Monumental 3-Line Title with Dala Staggered Unmasking */}
+            <div className="font-display text-display-dala text-white space-y-1">
+              <DalaReveal delay={0.12} rotate={2.5}>
+                <span className="block">Surgery.</span>
+              </DalaReveal>
+              <DalaReveal delay={0.22} rotate={-2.5}>
+                <span className="block">Security.</span>
+              </DalaReveal>
+              <DalaReveal delay={0.32} rotate={2.0}>
+                <span className="block text-[#9a9a9a]">Intelligence.</span>
+              </DalaReveal>
             </div>
 
-            {/* Display Headline — 78-113px with Dala sculptural staggered reveal */}
-            <motion.h1
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.15, delayChildren: 0.1 }
-                }
-              }}
-              className="font-display text-display-dala text-white"
-            >
-              <motion.span
-                variants={{
-                  hidden: { opacity: 0, y: 40, rotate: 1.5 },
-                  visible: { opacity: 1, y: 0, rotate: 0, transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] } }
-                }}
-                className="block"
-              >
-                {config.name?.split(' ')[0] || 'Muhammadaziz'}
-              </motion.span>
-              <motion.span
-                variants={{
-                  hidden: { opacity: 0, y: 40, rotate: -1.5 },
-                  visible: { opacity: 1, y: 0, rotate: 0, transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] } }
-                }}
-                className="block text-[#9a9a9a]"
-              >
-                {config.name?.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
-              </motion.span>
-            </motion.h1>
+            {/* Ultra-light body paragraph */}
+            <DalaReveal delay={0.42} rotate={1.5}>
+              <p className="font-body-ultralight text-[#bdbdbd] max-w-lg">
+                {config.headline ||
+                  'Operating at the bleeding edge where surgical anatomy meets zero-trust computing. Applying surgical discipline to distributed digital systems, zero-trust telemetry, and clinical engineering.'}
+              </p>
+            </DalaReveal>
 
-            {/* Ultra-light body copy */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="font-body-ultralight text-[#bdbdbd] max-w-md"
-            >
-              {config.headline || t('heroLead')}
-            </motion.p>
+            {/* Action Buttons */}
+            <DalaReveal delay={0.52} rotate={0} y="80%">
+              <div className="flex flex-wrap items-center gap-5 pt-2">
+                <Link href="/projects" className="btn-electric-iris group">
+                  <span>{t('selectedWork')}</span>
+                  <ArrowDownRight size={16} className="group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
+                </Link>
 
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-wrap items-center gap-5 pt-2"
-            >
-              <Link href="/projects" className="btn-electric-iris group">
-                <span>{t('selectedWork')}</span>
-                <ArrowDownRight size={16} className="group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
-              </Link>
+                {config.resume_url ? (
+                  <a
+                    href={config.resume_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="link-ghost flex items-center gap-2 py-3 group hover:text-white"
+                  >
+                    <Download size={15} className="group-hover:-translate-y-0.5 transition-transform" />
+                    <span>{t('downloadResume')}</span>
+                  </a>
+                ) : (
+                  <Link
+                    href="/about"
+                    className="link-ghost flex items-center gap-2 py-3 group hover:text-white"
+                  >
+                    <span>Read Biography →</span>
+                  </Link>
+                )}
+              </div>
+            </DalaReveal>
+          </div>
 
-              {config.resume_url && (
-                <a
-                  href={config.resume_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="link-ghost flex items-center gap-2 py-3 group hover:text-white"
-                >
-                  <Download size={15} className="group-hover:-translate-y-0.5 transition-transform" />
-                  <span>{t('downloadResume')}</span>
-                </a>
-              )}
-            </motion.div>
-          </motion.div>
-
-          {/* Right: Hero Stage for the 3D Constellation background */}
-          <div className="hidden lg:block relative h-[500px] pointer-events-none" aria-hidden="true" />
+          {/* Right Column: Open visual portal for 3D Background Constellation */}
+          <div className="lg:col-span-5 hidden lg:block relative h-[500px] pointer-events-none" aria-hidden="true" />
         </section>
 
         {/* ═══════════════════════════════════════════════════
-            SKILLS — Floating on Void
+            02. INTRODUCTION — Dala Tall Manifesto Section
         ═══════════════════════════════════════════════════ */}
-        {config.skills && config.skills.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="py-20 space-y-6"
-          >
-            <h3 className="font-caption-amber text-xs">Core Expertise</h3>
-            <div className="flex flex-wrap gap-3">
-              {config.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="px-4 py-2.5 rounded-full bg-white/[0.02] border border-white/[0.06] text-sm font-light text-[#bdbdbd] hover:text-white hover:border-[#8052ff]/50 hover:bg-[#8052ff]/10 transition-all duration-300 cursor-default"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </motion.section>
-        )}
+        <section className="py-28 md:py-36 max-w-4xl space-y-6">
+          <DalaReveal delay={0.05} rotate={0} y="100%">
+            <h3 className="font-caption-amber text-xs">01 / PARADIGM</h3>
+          </DalaReveal>
+
+          <DalaReveal delay={0.15} rotate={3}>
+            <h2 className="text-heading-lg-dala font-display text-white leading-tight">
+              Make decisions with surgical certainty.
+            </h2>
+          </DalaReveal>
+
+          <DalaReveal delay={0.25} rotate={2}>
+            <p className="font-body-ultralight text-[#bdbdbd] text-xl sm:text-2xl leading-relaxed max-w-3xl">
+              Whether navigating microvascular anatomy under magnification or hardening critical infrastructure against adversarial breaches, guesswork is unacceptable. Dual-core discipline ensures every architectural decision is grounded in verifiable evidence and uncompromised resilience.
+            </p>
+          </DalaReveal>
+        </section>
 
         {/* ═══════════════════════════════════════════════════
-            PHILOSOPHY QUOTE — Dala Void Style
+            03. ALTERNATING MANIFESTO BLOCKS (Dala Asymmetric)
         ═══════════════════════════════════════════════════ */}
-        {config.quote && (
-          <motion.section
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="py-24 max-w-3xl"
-          >
-            <div className="space-y-6">
-              <div className="w-12 h-[2px] bg-[#8052ff]" />
-              <p className="text-heading-md-dala font-display text-white leading-snug">
-                "{config.quote}"
+        <div className="space-y-32 py-16">
+          {/* Block A: Left Aligned */}
+          <section className="max-w-2xl space-y-5">
+            <DalaReveal delay={0.05} rotate={0} y="100%">
+              <h3 className="font-caption-amber text-xs">02 / CLINICAL DISCIPLINE</h3>
+            </DalaReveal>
+
+            <DalaReveal delay={0.15} rotate={3}>
+              <h2 className="text-heading-md-dala font-display text-white">
+                The human body as an unyielding architecture.
+              </h2>
+            </DalaReveal>
+
+            <DalaReveal delay={0.25} rotate={1.5}>
+              <p className="font-body-ultralight text-[#bdbdbd] leading-relaxed">
+                Human physiology is the ultimate distributed network. Organ systems communicate through neurovascular pathways with zero-tolerance autonomous fail-safes. This biological paradigm directly informs how we engineer fault-tolerant, self-healing digital systems.
               </p>
-              <p className="font-caption-amber text-xs">— {config.name}</p>
-            </div>
-          </motion.section>
-        )}
+            </DalaReveal>
+          </section>
+
+          {/* Block B: Right Aligned (Asymmetric) */}
+          <section className="max-w-2xl md:ml-auto space-y-5">
+            <DalaReveal delay={0.05} rotate={0} y="100%">
+              <h3 className="font-caption-amber text-xs">03 / CYBERNETIC ASSURANCE</h3>
+            </DalaReveal>
+
+            <DalaReveal delay={0.15} rotate={-3}>
+              <h2 className="text-heading-md-dala font-display text-white">
+                Zero-trust by design, not by patch.
+              </h2>
+            </DalaReveal>
+
+            <DalaReveal delay={0.25} rotate={-1.5}>
+              <p className="font-body-ultralight text-[#bdbdbd] leading-relaxed">
+                Security cannot exist as a superficial veneer. Real-world systems require provable cryptographic isolation, continuous least-privilege telemetry, and autonomous resilience under hostile adversarial conditions.
+              </p>
+            </DalaReveal>
+          </section>
+        </div>
 
         {/* ═══════════════════════════════════════════════════
-            STAT COUNTERS — Floating on Void
+            04. ALL 10 MODULES (Dala Knowledge Matrix)
         ═══════════════════════════════════════════════════ */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="py-20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8"
-        >
-          {[
-            { label: 'Projects', count: stats.projects, href: '/projects', icon: Code },
-            { label: 'Essays', count: stats.essays, href: '/essays', icon: Layers },
-            { label: 'Books', count: stats.books, href: '/books', icon: BookOpen },
-            { label: 'Travels', count: stats.travels, href: '/travel', icon: Compass },
-            { label: 'Security', count: stats.security, href: '/security', icon: Shield },
-            { label: 'Medical', count: stats.medical, href: '/medical', icon: Stethoscope },
-          ].map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-              >
-                <Link
-                  href={item.href}
-                  className="block group space-y-3"
-                >
-                  <div className="w-8 h-[1px] bg-[#8052ff]/50 group-hover:bg-[#8052ff] group-hover:w-14 transition-all duration-500" />
-                  <div className="text-heading-sm-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
-                    {item.count}
-                  </div>
-                  <div className="flex items-center gap-2 text-[#9a9a9a] group-hover:text-white text-xs font-light uppercase tracking-wider transition-colors">
-                    <Icon size={13} className="text-[#8052ff]" />
-                    <span>{item.label}</span>
-                  </div>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </motion.section>
-
-        {/* ═══════════════════════════════════════════════════
-            10 MODULES — Dala Grid (No Cards, Void-Floating)
-        ═══════════════════════════════════════════════════ */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="py-20 space-y-10"
-        >
-          <div className="flex items-center justify-between">
+        <section className="py-24 space-y-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h3 className="font-caption-amber text-xs mb-2">All Modules</h3>
-              <h2 className="text-heading-md-dala font-display text-white">Explore Everything</h2>
+              <DalaReveal delay={0.05} rotate={0} y="100%">
+                <h3 className="font-caption-amber text-xs mb-2">04 / KNOWLEDGE MATRIX</h3>
+              </DalaReveal>
+              <DalaReveal delay={0.15} rotate={2}>
+                <h2 className="text-heading-md-dala font-display text-white">All 10 dynamic modules.</h2>
+              </DalaReveal>
             </div>
+            <DalaReveal delay={0.2} rotate={0} y="80%">
+              <span className="text-xs text-[#9a9a9a] font-light">
+                ⚡ Bidirectional Supabase Sync
+              </span>
+            </DalaReveal>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
             {[
-              { title: 'Projects', desc: 'Code & Architecture', href: '/projects', icon: Code, badge: `${stats.projects}` },
-              { title: 'Essays', desc: 'Clinical & Tech notes', href: '/essays', icon: Layers, badge: `${stats.essays}` },
-              { title: 'Bookshelf', desc: 'Reviews & models', href: '/books', icon: BookOpen, badge: `${stats.books}` },
-              { title: 'Travel', desc: 'Expeditions', href: '/travel', icon: Compass, badge: `${stats.travels}` },
-              { title: 'Games', desc: 'Strategy & hobbies', href: '/games', icon: Gamepad2, badge: `${stats.games}` },
-              { title: 'Security', desc: 'Zero-trust notes', href: '/security', icon: Shield, badge: `${stats.security}` },
-              { title: 'Medical', desc: 'Anatomy & surgery', href: '/medical', icon: Stethoscope, badge: `${stats.medical}` },
-              { title: 'Quick Tips', desc: 'Micro-insights', href: '/tips', icon: Lightbulb, badge: `${stats.tips}` },
-              { title: 'Gallery', desc: 'Visual collection', href: '/gallery', icon: Eye, badge: `${stats.gallery}` },
-              { title: 'About', desc: 'Full story', href: '/about', icon: Sparkles, badge: '→' },
+              { num: '01', title: 'Projects', desc: 'Code & Systems', href: '/projects', icon: Code, badge: `${stats.projects}` },
+              { num: '02', title: 'Essays', desc: 'Clinical & Tech', href: '/essays', icon: Layers, badge: `${stats.essays}` },
+              { num: '03', title: 'Bookshelf', desc: 'Models & Reviews', href: '/books', icon: BookOpen, badge: `${stats.books}` },
+              { num: '04', title: 'Travel', desc: 'Field Expeditions', href: '/travel', icon: Compass, badge: `${stats.travels}` },
+              { num: '05', title: 'Games', desc: 'Strategy Labs', href: '/games', icon: Gamepad2, badge: `${stats.games}` },
+              { num: '06', title: 'Security', desc: 'Zero-Trust Notes', href: '/security', icon: Shield, badge: `${stats.security}` },
+              { num: '07', title: 'Medical', desc: 'Anatomy & Surgery', href: '/medical', icon: Stethoscope, badge: `${stats.medical}` },
+              { num: '08', title: 'Quick Tips', desc: 'Micro-Insights', href: '/tips', icon: Lightbulb, badge: `${stats.tips}` },
+              { num: '09', title: 'Gallery', desc: 'Anatomy Plates', href: '/gallery', icon: Eye, badge: `${stats.gallery}` },
+              { num: '10', title: 'About', desc: 'Dual-Domain Bio', href: '/about', icon: Sparkles, badge: '→' },
             ].map((sec, i) => {
               const Icon = sec.icon;
               return (
-                <motion.div
-                  key={sec.title}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.04 }}
-                >
+                <DalaReveal key={sec.title} delay={i * 0.04} rotate={2} y="60%">
                   <Link
                     href={sec.href}
-                    className="block group p-4 -m-4 rounded-2xl border-t border-white/[0.05] hover:border-[#8052ff]/60 hover:bg-white/[0.02] transition-all duration-300"
+                    className="block group p-5 rounded-2xl border border-white/[0.04] hover:border-[#8052ff]/60 hover:bg-white/[0.02] transition-all duration-300 relative overflow-hidden"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <Icon size={18} className="text-[#9a9a9a] group-hover:text-[#8052ff] group-hover:scale-110 transition-all duration-300" />
-                      <span className="text-[11px] text-[#9a9a9a]/60 group-hover:text-[#ffb829] font-light transition-colors">{sec.badge}</span>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-mono text-[#9a9a9a]/50 group-hover:text-[#ffb829] transition-colors">{sec.num}</span>
+                      <Icon size={18} className="text-[#9a9a9a] group-hover:text-[#8052ff] group-hover:scale-115 transition-all duration-300" />
                     </div>
                     <h3 className="text-sm font-medium text-white group-hover:text-[#8052ff] group-hover:translate-x-0.5 transition-all duration-300 mb-1">
                       {sec.title}
                     </h3>
-                    <p className="text-[12px] font-light text-[#9a9a9a]">{sec.desc}</p>
+                    <p className="text-[12px] font-light text-[#9a9a9a] mb-3">{sec.desc}</p>
+                    <div className="text-[10px] text-[#9a9a9a]/60 group-hover:text-[#ffb829] transition-colors">
+                      {sec.badge} entries
+                    </div>
                   </Link>
-                </motion.div>
+                </DalaReveal>
               );
             })}
           </div>
-        </motion.section>
+        </section>
 
         {/* ═══════════════════════════════════════════════════
-            FEATURED PROJECTS — Dala Void Style
+            05. SELECTED PROJECTS — Dala Large Format
         ═══════════════════════════════════════════════════ */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="py-20 space-y-10"
-        >
+        <section className="py-24 space-y-12">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-caption-amber text-xs mb-2">Selected Work</h3>
-              <h2 className="text-heading-md-dala font-display text-white">Projects</h2>
+              <DalaReveal delay={0.05} rotate={0} y="100%">
+                <h3 className="font-caption-amber text-xs mb-2">05 / SELECTED WORK</h3>
+              </DalaReveal>
+              <DalaReveal delay={0.15} rotate={2}>
+                <h2 className="text-heading-md-dala font-display text-white">High-assurance projects.</h2>
+              </DalaReveal>
             </div>
-            <Link href="/projects" className="link-saffron flex items-center gap-1 group">
-              <span>View all ({stats.projects})</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <DalaReveal delay={0.2} rotate={0} y="80%">
+              <Link href="/projects" className="link-saffron flex items-center gap-1 group">
+                <span>View all ({stats.projects})</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </DalaReveal>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
             {featuredProjects.map((p, i) => (
-              <motion.div
-                key={p.slug}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
+              <DalaReveal key={p.slug} delay={i * 0.12} rotate={i === 0 ? 2 : -2} y="50%">
                 <Link
                   href={`/projects/${p.slug}`}
-                  className="block group space-y-4"
+                  className="block group space-y-4 p-2"
                 >
                   <div className="flex items-center justify-between text-xs font-light">
                     <span className="text-[#ffb829] uppercase tracking-wider">{p.number || '01'} / {p.category}</span>
@@ -1078,7 +1054,7 @@ function HomePage() {
                     <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] group-hover:translate-x-1 transition-all duration-300">
                       {p.name}
                     </h3>
-                    <ArrowUpRight size={18} className="text-[#8052ff] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0" />
+                    <ArrowUpRight size={20} className="text-[#8052ff] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0" />
                   </div>
                   <p className="text-sm font-light text-[#bdbdbd] leading-relaxed line-clamp-3">
                     {p.summary}
@@ -1090,46 +1066,40 @@ function HomePage() {
                       </span>
                     ))}
                   </div>
-                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-gradient-to-r group-hover:from-[#8052ff]/60 group-hover:via-[#ffb829]/40 group-hover:to-transparent transition-all duration-700 mt-4" />
+                  <div className="w-full h-[1px] bg-white/[0.05] group-hover:bg-gradient-to-r group-hover:from-[#8052ff]/70 group-hover:via-[#ffb829]/50 group-hover:to-transparent transition-all duration-700 mt-4" />
                 </Link>
-              </motion.div>
+              </DalaReveal>
             ))}
           </div>
-        </motion.section>
+        </section>
 
         {/* ═══════════════════════════════════════════════════
-            LATEST ESSAYS — Dala Void Style
+            06. RECENT ESSAYS — Dala Editorial Archive
         ═══════════════════════════════════════════════════ */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="py-20 space-y-10 pb-32"
-        >
+        <section className="py-24 space-y-12">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-caption-amber text-xs mb-2">Reflections</h3>
-              <h2 className="text-heading-md-dala font-display text-white">Recent Essays</h2>
+              <DalaReveal delay={0.05} rotate={0} y="100%">
+                <h3 className="font-caption-amber text-xs mb-2">06 / DISPATCHES</h3>
+              </DalaReveal>
+              <DalaReveal delay={0.15} rotate={2}>
+                <h2 className="text-heading-md-dala font-display text-white">Recent essays & notes.</h2>
+              </DalaReveal>
             </div>
-            <Link href="/essays" className="link-saffron flex items-center gap-1 group">
-              <span>Read Archive</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <DalaReveal delay={0.2} rotate={0} y="80%">
+              <Link href="/essays" className="link-saffron flex items-center gap-1 group">
+                <span>Read Archive</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </DalaReveal>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
             {latestEssays.map((e, i) => (
-              <motion.div
-                key={e.slug}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
+              <DalaReveal key={e.slug} delay={i * 0.12} rotate={i === 0 ? -2 : 2} y="50%">
                 <Link
                   href={`/essays/${e.slug}`}
-                  className="block group space-y-3"
+                  className="block group space-y-3 p-2"
                 >
                   <div className="flex items-center justify-between text-xs font-light">
                     <span className="text-[#ffb829] uppercase tracking-wider">{e.type || e.category}</span>
@@ -1139,17 +1109,62 @@ function HomePage() {
                     <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] group-hover:translate-x-1 transition-all duration-300">
                       {e.title}
                     </h3>
-                    <ArrowUpRight size={18} className="text-[#8052ff] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0" />
+                    <ArrowUpRight size={20} className="text-[#8052ff] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0" />
                   </div>
                   <p className="text-sm font-light text-[#bdbdbd] leading-relaxed line-clamp-3">
                     {e.dek}
                   </p>
-                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-gradient-to-r group-hover:from-[#8052ff]/60 group-hover:via-[#ffb829]/40 group-hover:to-transparent transition-all duration-700 mt-4" />
+                  <div className="w-full h-[1px] bg-white/[0.05] group-hover:bg-gradient-to-r group-hover:from-[#8052ff]/70 group-hover:via-[#ffb829]/50 group-hover:to-transparent transition-all duration-700 mt-4" />
                 </Link>
-              </motion.div>
+              </DalaReveal>
             ))}
           </div>
-        </motion.section>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            07. PHILOSOPHY QUOTE — Monolithic Statement
+        ═══════════════════════════════════════════════════ */}
+        {config.quote && (
+          <section className="py-32 max-w-3xl space-y-6">
+            <DalaReveal delay={0.05} rotate={0} y="100%">
+              <div className="w-12 h-[2px] bg-[#8052ff]" />
+            </DalaReveal>
+            <DalaReveal delay={0.15} rotate={2}>
+              <p className="text-heading-md-dala font-display text-white leading-snug">
+                "{config.quote}"
+              </p>
+            </DalaReveal>
+            <DalaReveal delay={0.25} rotate={0} y="80%">
+              <p className="font-caption-amber text-xs">— {config.name}</p>
+            </DalaReveal>
+          </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            08. CLOSING CALL TO ACTION (Dala Footer Head Style)
+        ═══════════════════════════════════════════════════ */}
+        <section className="py-32 border-t border-white/[0.05] text-center space-y-8">
+          <DalaReveal delay={0.05} rotate={0} y="100%">
+            <span className="font-caption-amber text-xs uppercase tracking-widest">
+              MISSION INITIATIVE
+            </span>
+          </DalaReveal>
+
+          <DalaReveal delay={0.15} rotate={2}>
+            <h2 className="text-heading-lg-dala font-display text-white max-w-3xl mx-auto leading-tight">
+              Ready to engineer unyielding systems?
+            </h2>
+          </DalaReveal>
+
+          <DalaReveal delay={0.25} rotate={0} y="60%">
+            <div className="flex justify-center pt-4">
+              <Link href="/admin" className="btn-electric-iris !py-3 !px-8 !text-sm">
+                Access CMS Admin →
+              </Link>
+            </div>
+          </DalaReveal>
+        </section>
+
       </div>
     </div>
   );
