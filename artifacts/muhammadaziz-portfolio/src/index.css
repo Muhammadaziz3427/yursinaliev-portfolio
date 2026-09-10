@@ -74,6 +74,12 @@
   --radius: 24px;
 }
 
+html {
+  scroll-behavior: smooth;
+  background-color: #000000;
+  color-scheme: dark;
+}
+
 body {
   background-color: #000000;
   color: #ffffff;
@@ -117,12 +123,12 @@ body {
   color: #ffb829;
 }
 
-/* Primary Action Button (The single filled Electric Iris pill) */
+/* Primary Action Button (The single filled Electric Iris pill with liquid sheen) */
 .btn-electric-iris {
   background-color: #8052ff;
   color: #ffffff;
   border-radius: 22.5px;
-  padding: 12px 20px;
+  padding: 12px 22px;
   font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
@@ -131,19 +137,44 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 24px rgba(128, 82, 255, 0.25);
   text-decoration: none;
 }
 
+.btn-electric-iris::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 100%
+  );
+  transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-electric-iris:hover::before {
+  left: 100%;
+}
+
 .btn-electric-iris:hover {
-  opacity: 0.92;
-  transform: scale(1.02);
+  opacity: 1;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 35px rgba(128, 82, 255, 0.5), 0 8px 20px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .btn-electric-iris:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 /* Ghost Text Link */

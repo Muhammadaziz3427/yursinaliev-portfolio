@@ -4,6 +4,7 @@ import {
   ArrowDownRight,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   Bookmark,
   Check,
   Copy,
@@ -495,6 +496,16 @@ function SiteShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const [cursorPos, setCursorPos] = useState({ x: -999, y: -999 });
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      setCursorPos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMove);
+  }, []);
+
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
       <div className="site-shell min-h-screen bg-black text-white selection:bg-[#8052ff]/30 selection:text-white relative overflow-x-hidden">
@@ -502,6 +513,15 @@ function SiteShell({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
           <BrainConstellationCanvas />
         </div>
+
+        {/* Subtle Ambient Velvet Light Follower */}
+        <div
+          className="fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000"
+          style={{
+            background: `radial-gradient(650px circle at ${cursorPos.x}px ${cursorPos.y}px, rgba(128, 82, 255, 0.04), transparent 75%)`,
+          }}
+          aria-hidden="true"
+        />
 
         {/* Dala Transparent Navbar */}
         <DalaNavbar
@@ -794,25 +814,59 @@ function HomePage() {
               )}
             </div>
 
-            {/* Display Headline — 78-113px */}
-            <h1 className="font-display text-display-dala text-white">
-              {config.name?.split(' ')[0] || 'Muhammadaziz'}
-              <br />
-              <span className="text-[#9a9a9a]">
+            {/* Display Headline — 78-113px with Dala sculptural staggered reveal */}
+            <motion.h1
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+                }
+              }}
+              className="font-display text-display-dala text-white"
+            >
+              <motion.span
+                variants={{
+                  hidden: { opacity: 0, y: 40, rotate: 1.5 },
+                  visible: { opacity: 1, y: 0, rotate: 0, transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] } }
+                }}
+                className="block"
+              >
+                {config.name?.split(' ')[0] || 'Muhammadaziz'}
+              </motion.span>
+              <motion.span
+                variants={{
+                  hidden: { opacity: 0, y: 40, rotate: -1.5 },
+                  visible: { opacity: 1, y: 0, rotate: 0, transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] } }
+                }}
+                className="block text-[#9a9a9a]"
+              >
                 {config.name?.split(' ').slice(1).join(' ') || 'Yursinaliyev'}
-              </span>
-            </h1>
+              </motion.span>
+            </motion.h1>
 
             {/* Ultra-light body copy */}
-            <p className="font-body-ultralight text-[#bdbdbd] max-w-md">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="font-body-ultralight text-[#bdbdbd] max-w-md"
+            >
               {config.headline || t('heroLead')}
-            </p>
+            </motion.p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link href="/projects" className="btn-electric-iris">
-                {t('selectedWork')}
-                <ArrowDownRight size={16} />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-wrap items-center gap-5 pt-2"
+            >
+              <Link href="/projects" className="btn-electric-iris group">
+                <span>{t('selectedWork')}</span>
+                <ArrowDownRight size={16} className="group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
               </Link>
 
               {config.resume_url && (
@@ -820,13 +874,13 @@ function HomePage() {
                   href={config.resume_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="link-ghost flex items-center gap-2 py-3"
+                  className="link-ghost flex items-center gap-2 py-3 group hover:text-white"
                 >
-                  <Download size={15} />
-                  {t('downloadResume')}
+                  <Download size={15} className="group-hover:-translate-y-0.5 transition-transform" />
+                  <span>{t('downloadResume')}</span>
                 </a>
               )}
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Right: Hero Stage for the 3D Constellation background */}
@@ -849,7 +903,7 @@ function HomePage() {
               {config.skills.map((skill) => (
                 <span
                   key={skill}
-                  className="px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-sm font-light text-[#bdbdbd] hover:text-white hover:border-[#8052ff]/40 hover:bg-[#8052ff]/5 transition-all duration-300"
+                  className="px-4 py-2.5 rounded-full bg-white/[0.02] border border-white/[0.06] text-sm font-light text-[#bdbdbd] hover:text-white hover:border-[#8052ff]/50 hover:bg-[#8052ff]/10 transition-all duration-300 cursor-default"
                 >
                   {skill}
                 </span>
@@ -910,12 +964,12 @@ function HomePage() {
                   href={item.href}
                   className="block group space-y-3"
                 >
-                  <div className="w-8 h-[1px] bg-[#8052ff]/50 group-hover:bg-[#8052ff] group-hover:w-12 transition-all duration-300" />
+                  <div className="w-8 h-[1px] bg-[#8052ff]/50 group-hover:bg-[#8052ff] group-hover:w-14 transition-all duration-500" />
                   <div className="text-heading-sm-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
                     {item.count}
                   </div>
-                  <div className="flex items-center gap-2 text-[#9a9a9a] text-xs font-light uppercase tracking-wider">
-                    <Icon size={13} />
+                  <div className="flex items-center gap-2 text-[#9a9a9a] group-hover:text-white text-xs font-light uppercase tracking-wider transition-colors">
+                    <Icon size={13} className="text-[#8052ff]" />
                     <span>{item.label}</span>
                   </div>
                 </Link>
@@ -965,13 +1019,13 @@ function HomePage() {
                 >
                   <Link
                     href={sec.href}
-                    className="block group py-5 border-t border-white/[0.04] hover:border-[#8052ff]/30 transition-all duration-300"
+                    className="block group p-4 -m-4 rounded-2xl border-t border-white/[0.05] hover:border-[#8052ff]/60 hover:bg-white/[0.02] transition-all duration-300"
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <Icon size={18} className="text-[#9a9a9a] group-hover:text-[#8052ff] transition-colors duration-300" />
-                      <span className="text-[11px] text-[#9a9a9a]/60 font-light">{sec.badge}</span>
+                      <Icon size={18} className="text-[#9a9a9a] group-hover:text-[#8052ff] group-hover:scale-110 transition-all duration-300" />
+                      <span className="text-[11px] text-[#9a9a9a]/60 group-hover:text-[#ffb829] font-light transition-colors">{sec.badge}</span>
                     </div>
-                    <h3 className="text-sm font-medium text-white group-hover:text-[#8052ff] transition-colors duration-300 mb-1">
+                    <h3 className="text-sm font-medium text-white group-hover:text-[#8052ff] group-hover:translate-x-0.5 transition-all duration-300 mb-1">
                       {sec.title}
                     </h3>
                     <p className="text-[12px] font-light text-[#9a9a9a]">{sec.desc}</p>
@@ -997,8 +1051,9 @@ function HomePage() {
               <h3 className="font-caption-amber text-xs mb-2">Selected Work</h3>
               <h2 className="text-heading-md-dala font-display text-white">Projects</h2>
             </div>
-            <Link href="/projects" className="link-saffron flex items-center gap-1">
-              View all ({stats.projects}) <ArrowRight size={14} />
+            <Link href="/projects" className="link-saffron flex items-center gap-1 group">
+              <span>View all ({stats.projects})</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
@@ -1019,20 +1074,23 @@ function HomePage() {
                     <span className="text-[#ffb829] uppercase tracking-wider">{p.number || '01'} / {p.category}</span>
                     <span className="text-[#9a9a9a]">{p.year}</span>
                   </div>
-                  <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
-                    {p.name}
-                  </h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] group-hover:translate-x-1 transition-all duration-300">
+                      {p.name}
+                    </h3>
+                    <ArrowUpRight size={18} className="text-[#8052ff] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0" />
+                  </div>
                   <p className="text-sm font-light text-[#bdbdbd] leading-relaxed line-clamp-3">
                     {p.summary}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {(p.techStack || p.tech_stack || []).map((tech) => (
-                      <span key={tech} className="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] font-light text-[#9a9a9a]">
+                      <span key={tech} className="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] font-light text-[#9a9a9a] group-hover:border-white/[0.12] transition-colors">
                         {tech}
                       </span>
                     ))}
                   </div>
-                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-[#8052ff]/20 transition-colors duration-500 mt-4" />
+                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-gradient-to-r group-hover:from-[#8052ff]/60 group-hover:via-[#ffb829]/40 group-hover:to-transparent transition-all duration-700 mt-4" />
                 </Link>
               </motion.div>
             ))}
@@ -1054,8 +1112,9 @@ function HomePage() {
               <h3 className="font-caption-amber text-xs mb-2">Reflections</h3>
               <h2 className="text-heading-md-dala font-display text-white">Recent Essays</h2>
             </div>
-            <Link href="/essays" className="link-saffron flex items-center gap-1">
-              Read Archive <ArrowRight size={14} />
+            <Link href="/essays" className="link-saffron flex items-center gap-1 group">
+              <span>Read Archive</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
@@ -1076,13 +1135,16 @@ function HomePage() {
                     <span className="text-[#ffb829] uppercase tracking-wider">{e.type || e.category}</span>
                     <span className="text-[#9a9a9a]">{e.read || '5 min read'}</span>
                   </div>
-                  <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] transition-colors duration-300">
-                    {e.title}
-                  </h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-heading-xs-dala font-display text-white group-hover:text-[#8052ff] group-hover:translate-x-1 transition-all duration-300">
+                      {e.title}
+                    </h3>
+                    <ArrowUpRight size={18} className="text-[#8052ff] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0" />
+                  </div>
                   <p className="text-sm font-light text-[#bdbdbd] leading-relaxed line-clamp-3">
                     {e.dek}
                   </p>
-                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-[#8052ff]/20 transition-colors duration-500 mt-4" />
+                  <div className="w-full h-[1px] bg-white/[0.04] group-hover:bg-gradient-to-r group-hover:from-[#8052ff]/60 group-hover:via-[#ffb829]/40 group-hover:to-transparent transition-all duration-700 mt-4" />
                 </Link>
               </motion.div>
             ))}

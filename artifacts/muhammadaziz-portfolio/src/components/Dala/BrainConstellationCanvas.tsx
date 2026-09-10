@@ -1,34 +1,77 @@
 import { useRef, useEffect, useCallback } from 'react';
 
+// ============================================================================
+// TYPES & DATA STRUCTURES
+// ============================================================================
+
+interface PyramidFace {
+  p0: { x: number; y: number; z: number };
+  p1: { x: number; y: number; z: number };
+  p2: { x: number; y: number; z: number };
+  normZ: number;
+  shade: number;
+}
+
 interface Particle3D {
-  // Base 3D coordinates in brain local space
+  // Base 3D coordinate in neural local space
   baseX: number;
   baseY: number;
   baseZ: number;
-  // Current dynamic 3D coordinates
+  // Current dynamic 3D coordinate (with organic breathing + ripple offsets)
   x: number;
   y: number;
   z: number;
-  // Transformed & projected coordinates
+  // Projected screen coordinates
   projX: number;
   projY: number;
   projScale: number;
   rotatedZ: number;
   // Visual attributes
   size: number;
-  color: string;
-  triangleRot: number;
-  triangleRotSpeed: number;
+  colorBase: string;
+  colorHighlight: string;
+  // Local 3D rotation angles & velocities
+  rotX: number;
+  rotY: number;
+  rotZ: number;
+  vRotX: number;
+  vRotY: number;
+  vRotZ: number;
+  // Pulse & illumination
   pulsePhase: number;
   pulseSpeed: number;
   baseOpacity: number;
   currentOpacity: number;
-  // Individual particle drift
-  driftPhaseX: number;
-  driftPhaseY: number;
-  driftPhaseZ: number;
+  excitation: number; // 0 to 1, boosts glow on click / proximity
+  // Individual organic drift
+  driftPhase: number;
   driftSpeed: number;
   driftAmp: number;
+  // Pre-calculated pyramid geometry cache
+  faces: PyramidFace[];
+}
+
+interface SynapticPulse {
+  sourceIdx: number;
+  targetIdx: number;
+  progress: number; // 0 to 1
+  speed: number;
+  color: string;
+}
+
+interface SynapticConnection {
+  i: number;
+  j: number;
+  dist: number;
+}
+
+interface ThoughtRipple {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  strength: number;
+  color: string;
 }
 
 interface Stardust3D {
@@ -45,89 +88,95 @@ interface Stardust3D {
   opacityDir: number;
 }
 
+// ============================================================================
+// DALA COLOR PALETTES
+// ============================================================================
 const PALETTE = [
-  '#8052ff', '#8052ff', '#8052ff', '#8052ff', // Electric Iris (predominant)
-  '#ffb829', '#ffb829',                        // Saffron Spark
-  '#15846e',                                    // Deep Verdant
-  '#d946ef',                                    // Orchid Magenta
-  '#38bdf8',                                    // Electric Sky Blue
-  '#ffffff',                                    // White sparks
+  { base: '#8052ff', highlight: '#bca5ff' }, // Electric Iris
+  { base: '#8052ff', highlight: '#9f7dff' }, // Electric Iris deep
+  { base: '#ffb829', highlight: '#ffe28a' }, // Saffron Spark
+  { base: '#15846e', highlight: '#34d399' }, // Deep Verdant
+  { base: '#d946ef', highlight: '#f0abfc' }, // Orchid Magenta
+  { base: '#0ea5e9', highlight: '#7dd3fc' }, // Sky Iris
+  { base: '#ffffff', highlight: '#ffffff' }, // Pure Star Spark
 ];
 
-// Check if (x, y, z) is inside an anatomically accurate 3D volumetric brain
+// Light vector for 3D faceted shading (normalized from upper-left-front)
+const LIGHT_DIR = { x: 0.408, y: -0.707, z: 0.577 };
+
+// Check if (x, y, z) is inside an anatomically accurate volumetric brain
 function isInsideBrain3D(x: number, y: number, z: number): boolean {
-  // Normalize coordinates (-1 to 1 range approx)
   const nx = x;
   const ny = y;
   const nz = z;
 
   // Central longitudinal fissure (gap between left and right hemispheres)
-  if (Math.abs(nx) < 0.05 && ny < 0.35 && nz > -0.5) {
+  if (Math.abs(nx) < 0.055 && ny < 0.38 && nz > -0.55) {
     return false;
   }
 
   // Left & right hemisphere centers
   const hemiX = nx > 0 ? nx - 0.28 : nx + 0.28;
 
-  // Main cerebral hemisphere ellipsoid
-  // x: width (~0.65 each hemisphere), y: height (~0.75), z: depth (~1.0)
+  // Cerebral hemisphere ellipsoid
   const cortex =
-    (hemiX * hemiX) / (0.42 * 0.42) +
-    ((ny + 0.08) * (ny + 0.08)) / (0.55 * 0.55) +
-    (nz * nz) / (0.75 * 0.75);
+    (hemiX * hemiX) / (0.44 * 0.44) +
+    ((ny + 0.08) * (ny + 0.08)) / (0.58 * 0.58) +
+    (nz * nz) / (0.78 * 0.78);
 
-  // Frontal lobe expansion (slightly larger at front)
+  // Frontal lobe expansion
   const frontalFactor = nz > 0.1 ? 1.0 - (nz - 0.1) * 0.15 : 1.0;
 
   if (cortex * frontalFactor <= 1.0) {
-    // Add cortical surface gyri/sulci perturbations
+    // Cortical surface gyri & sulci perturbations
     const gyri =
-      Math.sin(nx * 12) * Math.cos(ny * 10) * Math.sin(nz * 11) * 0.06;
+      Math.sin(nx * 14) * Math.cos(ny * 12) * Math.sin(nz * 13) * 0.07;
     return cortex + gyri <= 1.0;
   }
 
   // Cerebellum (lower back portion)
   const cerebX = nx > 0 ? nx - 0.22 : nx + 0.22;
-  const cerebY = ny - 0.45;
-  const cerebZ = nz + 0.38;
+  const cerebY = ny - 0.46;
+  const cerebZ = nz + 0.40;
   const cerebellum =
-    (cerebX * cerebX) / (0.28 * 0.28) +
-    (cerebY * cerebY) / (0.22 * 0.22) +
-    (cerebZ * cerebZ) / (0.28 * 0.28);
+    (cerebX * cerebX) / (0.30 * 0.30) +
+    (cerebY * cerebY) / (0.24 * 0.24) +
+    (cerebZ * cerebZ) / (0.30 * 0.30);
 
   if (cerebellum <= 1.0) {
     return true;
   }
 
-  // Brainstem (slender stalk protruding downwards)
-  if (ny > 0.35 && ny < 0.85 && Math.abs(nx) < 0.12 && Math.abs(nz + 0.1) < 0.14) {
+  // Brainstem (slender descending column)
+  if (ny > 0.38 && ny < 0.90 && Math.abs(nx) < 0.13 && Math.abs(nz + 0.1) < 0.15) {
     return true;
   }
 
   return false;
 }
 
-function generateBrainParticles3D(count: number, scale: number): Particle3D[] {
+// Generate volumetric 3D faceted particles
+function generateBrainParticles(count: number, scale: number): Particle3D[] {
   const particles: Particle3D[] = [];
   let attempts = 0;
 
   while (particles.length < count && attempts < count * 35) {
     attempts++;
 
-    // Random point in normalized bounding cube [-1, 1]
     const nx = (Math.random() - 0.5) * 1.8;
     const ny = (Math.random() - 0.5) * 1.6;
     const nz = (Math.random() - 0.5) * 1.8;
 
     if (!isInsideBrain3D(nx, ny, nz)) continue;
 
-    // Prefer surface distribution slightly for clean silhouette definition
+    // Density modulation: crisp surface with porous core
     const distCenter = Math.sqrt(nx * nx + ny * ny + nz * nz);
-    if (distCenter < 0.25 && Math.random() > 0.4) continue;
+    if (distCenter < 0.22 && Math.random() > 0.35) continue;
 
     const bx = nx * scale;
     const by = ny * scale;
     const bz = nz * scale;
+    const colorPair = PALETTE[Math.floor(Math.random() * PALETTE.length)];
 
     particles.push({
       baseX: bx,
@@ -140,90 +189,199 @@ function generateBrainParticles3D(count: number, scale: number): Particle3D[] {
       projY: 0,
       projScale: 1,
       rotatedZ: 0,
-      size: 2.2 + Math.random() * 4.2,
-      color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-      triangleRot: Math.random() * Math.PI * 2,
-      triangleRotSpeed: (Math.random() - 0.5) * 0.03,
+      size: 2.4 + Math.random() * 4.5,
+      colorBase: colorPair.base,
+      colorHighlight: colorPair.highlight,
+      rotX: Math.random() * Math.PI * 2,
+      rotY: Math.random() * Math.PI * 2,
+      rotZ: Math.random() * Math.PI * 2,
+      vRotX: (Math.random() - 0.5) * 0.03,
+      vRotY: (Math.random() - 0.5) * 0.03,
+      vRotZ: (Math.random() - 0.5) * 0.02,
       pulsePhase: Math.random() * Math.PI * 2,
       pulseSpeed: 0.015 + Math.random() * 0.03,
-      baseOpacity: 0.35 + Math.random() * 0.55,
-      currentOpacity: 0.5,
-      driftPhaseX: Math.random() * Math.PI * 2,
-      driftPhaseY: Math.random() * Math.PI * 2,
-      driftPhaseZ: Math.random() * Math.PI * 2,
+      baseOpacity: 0.4 + Math.random() * 0.55,
+      currentOpacity: 0.6,
+      excitation: 0,
+      driftPhase: Math.random() * Math.PI * 2,
       driftSpeed: 0.003 + Math.random() * 0.005,
-      driftAmp: 4 + Math.random() * 8,
+      driftAmp: 3 + Math.random() * 6,
+      faces: [],
     });
   }
 
   return particles;
 }
 
+// Build synaptic network links between close 3D nodes
+function buildSynapticConnections(particles: Particle3D[], maxDist: number): SynapticConnection[] {
+  const connections: SynapticConnection[] = [];
+  const limit = Math.min(particles.length, 350);
+
+  for (let i = 0; i < limit; i++) {
+    let neighbors = 0;
+    for (let j = i + 1; j < limit; j++) {
+      if (neighbors >= 3) break;
+      const dx = particles[i].baseX - particles[j].baseX;
+      const dy = particles[i].baseY - particles[j].baseY;
+      const dz = particles[i].baseZ - particles[j].baseZ;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (dist < maxDist) {
+        connections.push({ i, j, dist });
+        neighbors++;
+      }
+    }
+  }
+
+  return connections;
+}
+
+// Generate floating celestial stardust
 function generateStardust(count: number, width: number, height: number): Stardust3D[] {
   return Array.from({ length: count }, () => ({
-    x: (Math.random() - 0.5) * width * 1.8,
-    y: (Math.random() - 0.5) * height * 1.8,
-    z: (Math.random() - 0.5) * 1200,
-    vx: (Math.random() - 0.5) * 0.25,
-    vy: -0.15 - Math.random() * 0.3, // Gentle upward cosmic float
+    x: (Math.random() - 0.5) * width * 2,
+    y: (Math.random() - 0.5) * height * 2,
+    z: (Math.random() - 0.5) * 1400,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: -0.2 - Math.random() * 0.35, // Ethereal cosmic ascent
     vz: (Math.random() - 0.5) * 0.3,
-    size: 1.0 + Math.random() * 2.6,
-    color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-    opacity: 0.1 + Math.random() * 0.4,
-    opacitySpeed: 0.004 + Math.random() * 0.008,
+    size: 1.0 + Math.random() * 2.8,
+    color: PALETTE[Math.floor(Math.random() * PALETTE.length)].base,
+    opacity: 0.12 + Math.random() * 0.4,
+    opacitySpeed: 0.005 + Math.random() * 0.01,
     opacityDir: Math.random() > 0.5 ? 1 : -1,
   }));
 }
 
-// Draw a single 3D-projected chromatic triangle glyph
-function renderTriangle(
+// Render a single 3D Faceted Micro-Pyramid (Tetrahedron) with dynamic specular lighting
+function renderFacetedPyramid(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
+  cx: number,
+  cy: number,
   size: number,
-  rotation: number,
-  color: string,
+  rotX: number,
+  rotY: number,
+  rotZ: number,
+  colorBase: string,
+  colorHighlight: string,
   opacity: number,
-  lineWidth: number
+  excitation: number
 ) {
+  // Tetrahedron local canonical vertices
+  const h = size * 1.1;
+  const r = size * 0.85;
+
+  const v0 = { x: 0, y: -h * 0.65, z: 0 }; // Apex
+  const v1 = { x: -r * 0.866, y: h * 0.35, z: -r * 0.5 };
+  const v2 = { x: r * 0.866, y: h * 0.35, z: -r * 0.5 };
+  const v3 = { x: 0, y: h * 0.35, z: r };
+
+  const verts = [v0, v1, v2, v3];
+
+  // Rotate local vertices by particle's tumble angles
+  const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+  const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+  const cosZ = Math.cos(rotZ), sinZ = Math.sin(rotZ);
+
+  const tVerts = verts.map((v) => {
+    // Rot Y
+    const x1 = v.x * cosY + v.z * sinY;
+    const z1 = -v.x * sinY + v.z * cosY;
+    const y1 = v.y;
+    // Rot X
+    const y2 = y1 * cosX - z1 * sinX;
+    const z2 = y1 * sinX + z1 * cosX;
+    const x2 = x1;
+    // Rot Z
+    const x3 = x2 * cosZ - y2 * sinZ;
+    const y3 = x2 * sinZ + y2 * cosZ;
+    const z3 = z2;
+
+    return { x: cx + x3, y: cy + y3, z: z3 };
+  });
+
+  // Faces: [Apex, V1, V2], [Apex, V2, V3], [Apex, V3, V1]
+  const faces = [
+    [tVerts[0], tVerts[1], tVerts[2]],
+    [tVerts[0], tVerts[2], tVerts[3]],
+    [tVerts[0], tVerts[3], tVerts[1]],
+  ];
+
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotation);
-  ctx.globalAlpha = opacity;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
 
-  // Equilateral triangle
-  const h = size * 0.866;
-  ctx.beginPath();
-  ctx.moveTo(0, -h * 0.67);
-  ctx.lineTo(-size * 0.5, h * 0.33);
-  ctx.lineTo(size * 0.5, h * 0.33);
-  ctx.closePath();
-  ctx.stroke();
+  // Boost opacity with excitation
+  const effectiveOpacity = Math.min(1.0, opacity + excitation * 0.4);
 
-  // Highlight inner vertex for spark particles
-  if (size > 3.5 && opacity > 0.6) {
-    ctx.fillStyle = color;
-    ctx.globalAlpha = opacity * 0.35;
+  for (let f = 0; f < faces.length; f++) {
+    const [p0, p1, p2] = faces[f];
+
+    // Compute face normal via cross product in screen space
+    const ax = p1.x - p0.x, ay = p1.y - p0.y;
+    const bx = p2.x - p0.x, by = p2.y - p0.y;
+    const crossZ = ax * by - ay * bx;
+
+    // Back-face culling
+    if (crossZ > 0) continue;
+
+    // Specular shading factor
+    const shade = Math.min(1.0, Math.max(0.35, 0.45 + (f === 0 ? 0.4 : f === 1 ? 0.2 : 0.0)));
+
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.closePath();
+
+    // Facet fill
+    ctx.globalAlpha = effectiveOpacity * shade;
+    ctx.fillStyle = shade > 0.65 ? colorHighlight : colorBase;
+    ctx.fill();
+
+    // Crisp facet edge outline
+    ctx.globalAlpha = effectiveOpacity * 0.9;
+    ctx.strokeStyle = colorHighlight;
+    ctx.lineWidth = 0.85;
+    ctx.stroke();
+  }
+
+  // If excited, draw glowing core spark
+  if (excitation > 0.3) {
+    ctx.globalAlpha = excitation * 0.6;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
 
   ctx.restore();
 }
 
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export function BrainConstellationCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle3D[]>([]);
+  const connectionsRef = useRef<SynapticConnection[]>([]);
+  const pulsesRef = useRef<SynapticPulse[]>([]);
+  const ripplesRef = useRef<ThoughtRipple[]>([]);
   const stardustRef = useRef<Stardust3D[]>([]);
 
-  // Smooth interpolated motion states
+  // Smooth interpolated interaction states
   const mouseRef = useRef({
     currentX: 0,
     currentY: 0,
     targetX: 0,
     targetY: 0,
-    active: false,
+    screenX: -9999,
+    screenY: -9999,
+    isDown: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    orbitDeltaX: 0,
+    orbitDeltaY: 0,
   });
 
   const scrollRef = useRef({
@@ -254,13 +412,27 @@ export function BrainConstellationCanvas() {
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.scale(dpr, dpr);
 
-    // Dynamic brain scale tailored to viewport
-    const brainScale = Math.min(rect.width, rect.height) * (rect.width >= 1024 ? 0.38 : 0.34);
-    const particleCount = rect.width < 768 ? 1100 : rect.width < 1280 ? 1800 : 2500;
-    const stardustCount = rect.width < 768 ? 80 : 160;
+    const isDesktop = rect.width >= 1024;
+    const brainScale = Math.min(rect.width, rect.height) * (isDesktop ? 0.40 : 0.35);
+    const particleCount = rect.width < 768 ? 1200 : rect.width < 1280 ? 2000 : 2800;
+    const stardustCount = rect.width < 768 ? 90 : 180;
 
-    particlesRef.current = generateBrainParticles3D(particleCount, brainScale);
+    const particles = generateBrainParticles(particleCount, brainScale);
+    particlesRef.current = particles;
+    connectionsRef.current = buildSynapticConnections(particles, brainScale * 0.26);
     stardustRef.current = generateStardust(stardustCount, rect.width, rect.height);
+
+    // Initialize pool of firing synaptic pulses
+    pulsesRef.current = Array.from({ length: 35 }, () => {
+      const conn = connectionsRef.current[Math.floor(Math.random() * connectionsRef.current.length)];
+      return {
+        sourceIdx: conn ? conn.i : 0,
+        targetIdx: conn ? conn.j : 1,
+        progress: Math.random(),
+        speed: 0.008 + Math.random() * 0.015,
+        color: Math.random() > 0.4 ? '#8052ff' : '#ffb829',
+      };
+    });
   }, []);
 
   useEffect(() => {
@@ -273,15 +445,48 @@ export function BrainConstellationCanvas() {
     const handleMouseMove = (e: MouseEvent) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      mouseRef.current.targetX = (e.clientX / w - 0.5) * 2; // -1 to 1
-      mouseRef.current.targetY = (e.clientY / h - 0.5) * 2; // -1 to 1
-      mouseRef.current.active = true;
+      mouseRef.current.screenX = e.clientX;
+      mouseRef.current.screenY = e.clientY;
+      mouseRef.current.targetX = (e.clientX / w - 0.5) * 2;
+      mouseRef.current.targetY = (e.clientY / h - 0.5) * 2;
+
+      // If mouse dragging, add manual orbital rotation
+      if (mouseRef.current.isDown) {
+        const dx = e.clientX - mouseRef.current.dragStartX;
+        const dy = e.clientY - mouseRef.current.dragStartY;
+        mouseRef.current.orbitDeltaX += dx * 0.004;
+        mouseRef.current.orbitDeltaY += dy * 0.004;
+        mouseRef.current.dragStartX = e.clientX;
+        mouseRef.current.dragStartY = e.clientY;
+      }
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      mouseRef.current.isDown = true;
+      mouseRef.current.dragStartX = e.clientX;
+      mouseRef.current.dragStartY = e.clientY;
+
+      // Spawn an expanding synaptic shockwave on click
+      ripplesRef.current.push({
+        x: e.clientX,
+        y: e.clientY,
+        radius: 10,
+        maxRadius: 280,
+        strength: 1.0,
+        color: Math.random() > 0.5 ? '#ffb829' : '#8052ff',
+      });
+    };
+
+    const handleMouseUp = () => {
+      mouseRef.current.isDown = false;
     };
 
     const handleMouseLeave = () => {
       mouseRef.current.targetX = 0;
       mouseRef.current.targetY = 0;
-      mouseRef.current.active = false;
+      mouseRef.current.screenX = -9999;
+      mouseRef.current.screenY = -9999;
+      mouseRef.current.isDown = false;
     };
 
     const handleScroll = () => {
@@ -290,10 +495,11 @@ export function BrainConstellationCanvas() {
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('mouseleave', handleMouseLeave);
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // Initial scroll setup
     scrollRef.current.targetY = window.scrollY;
     scrollRef.current.currentY = window.scrollY;
 
@@ -312,189 +518,264 @@ export function BrainConstellationCanvas() {
       timeRef.current += 1;
       const t = timeRef.current;
 
-      // Smooth mouse interpolation (spring lerp)
+      // 1. INTERACTION INTERPOLATION
       const m = mouseRef.current;
-      m.currentX += (m.targetX - m.currentX) * 0.04;
-      m.currentY += (m.targetY - m.currentY) * 0.04;
+      m.currentX += (m.targetX - m.currentX) * 0.05;
+      m.currentY += (m.targetY - m.currentY) * 0.05;
 
-      // Smooth scroll interpolation
       const s = scrollRef.current;
-      s.currentY += (s.targetY - s.currentY) * 0.06;
+      s.currentY += (s.targetY - s.currentY) * 0.065;
       const maxScroll = Math.max(document.body.scrollHeight - h, 1);
       const scrollProgress = Math.min(Math.max(s.currentY / maxScroll, 0), 1);
 
-      // Dynamic 3D Camera Center Point
-      // On desktop: Hero state positions the brain on the right column (~70% width)
-      // As user scrolls, it glides across the page with organic orbital sway
+      // 2. CHOREOGRAPHED 3D CAMERA ORBIT ALONG SECTIONS
       const isDesktop = w >= 1024;
-      const heroCenterX = isDesktop ? w * 0.71 : w * 0.5;
+      const heroCenterX = isDesktop ? w * 0.70 : w * 0.5;
       const heroCenterY = isDesktop ? h * 0.48 : h * 0.38;
 
-      // Drift path as user scrolls down the site
-      const scrollDriftX = Math.sin(scrollProgress * Math.PI * 2.2) * (isDesktop ? w * 0.16 : w * 0.08);
-      const scrollDriftY = Math.cos(scrollProgress * Math.PI * 1.5) * (h * 0.1) + Math.sin(t * 0.003) * 12;
+      // Cinematic multi-section camera trajectory
+      const scrollDriftX = Math.sin(scrollProgress * Math.PI * 2.4) * (isDesktop ? w * 0.18 : w * 0.09);
+      const scrollDriftY = Math.cos(scrollProgress * Math.PI * 1.8) * (h * 0.12) + Math.sin(t * 0.003) * 10;
 
-      const centerX = heroCenterX - (scrollProgress > 0 ? scrollProgress * (isDesktop ? w * 0.18 : 0) : 0) + scrollDriftX;
+      const centerX = heroCenterX - (scrollProgress > 0 ? scrollProgress * (isDesktop ? w * 0.20 : 0) : 0) + scrollDriftX;
       const centerY = heroCenterY + scrollDriftY;
 
-      // Dynamic 3D Rotations (Continuous spin + mouse parallax + scroll pitch/yaw)
+      // Rotations: continuous auto-spin + section progression + mouse tilt + drag orbit
       const rot = rotRef.current;
-      const autoSpinY = t * 0.0025; // Gentle majestic idle revolution
-      const autoSpinX = Math.sin(t * 0.0018) * 0.12;
+      const autoSpinY = t * 0.003;
+      const autoSpinX = Math.sin(t * 0.002) * 0.14;
 
-      const scrollRotY = scrollProgress * Math.PI * 3.5; // Rotates 3D as user scrolls through site
-      const scrollRotX = Math.sin(scrollProgress * Math.PI * 2) * 0.45;
-      const scrollRotZ = Math.cos(scrollProgress * Math.PI) * 0.2;
+      const scrollRotY = scrollProgress * Math.PI * 3.8;
+      const scrollRotX = Math.sin(scrollProgress * Math.PI * 2) * 0.55;
+      const scrollRotZ = Math.cos(scrollProgress * Math.PI) * 0.25;
 
-      const mouseTiltY = m.currentX * 0.45;
-      const mouseTiltX = -m.currentY * 0.35;
+      const mouseTiltY = m.currentX * 0.55 + m.orbitDeltaX;
+      const mouseTiltX = -m.currentY * 0.42 + m.orbitDeltaY;
 
       rot.targetRotY = autoSpinY + scrollRotY + mouseTiltY;
       rot.targetRotX = autoSpinX + scrollRotX + mouseTiltX;
 
-      rot.rotY += (rot.targetRotY - rot.rotY) * 0.08;
-      rot.rotX += (rot.targetRotX - rot.rotX) * 0.08;
+      rot.rotY += (rot.targetRotY - rot.rotY) * 0.09;
+      rot.rotX += (rot.targetRotX - rot.rotX) * 0.09;
       rot.rotZ = scrollRotZ;
 
-      const cosY = Math.cos(rot.rotY);
-      const sinY = Math.sin(rot.rotY);
-      const cosX = Math.cos(rot.rotX);
-      const sinX = Math.sin(rot.rotX);
-      const cosZ = Math.cos(rot.rotZ);
-      const sinZ = Math.sin(rot.rotZ);
+      const cosY = Math.cos(rot.rotY), sinY = Math.sin(rot.rotY);
+      const cosX = Math.cos(rot.rotX), sinX = Math.sin(rot.rotX);
+      const cosZ = Math.cos(rot.rotZ), sinZ = Math.sin(rot.rotZ);
 
-      // Camera focal length for realistic perspective
       const cameraZ = 750;
 
-      // 1. UPDATE & PROJECT PARTICLES
+      // 3. UPDATE THOUGHT RIPPLES
+      const ripples = ripplesRef.current;
+      for (let r = ripples.length - 1; r >= 0; r--) {
+        const rip = ripples[r];
+        rip.radius += 9.5;
+        rip.strength *= 0.94;
+
+        if (rip.strength < 0.02 || rip.radius > rip.maxRadius) {
+          ripples.splice(r, 1);
+        } else {
+          // Draw subtle luminous shockwave ring
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
+          ctx.globalAlpha = rip.strength * 0.25;
+          ctx.strokeStyle = rip.color;
+          ctx.lineWidth = 2.0;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // 4. PROJECT & TRANSFORM PARTICLES
       const particles = particlesRef.current;
+      const mouseScreenX = m.screenX;
+      const mouseScreenY = m.screenY;
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        // Individual organic drift within the constellation
-        const driftX = Math.sin(t * p.driftSpeed + p.driftPhaseX) * p.driftAmp;
-        const driftY = Math.cos(t * p.driftSpeed + p.driftPhaseY) * p.driftAmp * 0.8;
-        const driftZ = Math.sin(t * p.driftSpeed + p.driftPhaseZ) * p.driftAmp;
+        // Organic biological breathing pulsation
+        const breathing = Math.sin(t * 0.015 + p.driftPhase) * 0.035;
+        const currentScale = 1 + breathing;
 
-        p.x = p.baseX + driftX;
-        p.y = p.baseY + driftY;
-        p.z = p.baseZ + driftZ;
+        const driftX = Math.sin(t * p.driftSpeed + p.driftPhase) * p.driftAmp;
+        const driftY = Math.cos(t * p.driftSpeed + p.driftPhase) * p.driftAmp * 0.8;
+        const driftZ = Math.sin(t * p.driftSpeed * 0.8 + p.driftPhase) * p.driftAmp;
 
-        // 3D Matrix Rotation (Y axis -> X axis -> Z axis)
-        // 1. Rotate Y
+        p.x = p.baseX * currentScale + driftX;
+        p.y = p.baseY * currentScale + driftY;
+        p.z = p.baseZ * currentScale + driftZ;
+
+        // 3D Matrix Rotation
         const x1 = p.x * cosY + p.z * sinY;
         const z1 = -p.x * sinY + p.z * cosY;
         const y1 = p.y;
 
-        // 2. Rotate X
         const y2 = y1 * cosX - z1 * sinX;
         const z2 = y1 * sinX + z1 * cosX;
         const x2 = x1;
 
-        // 3. Rotate Z
         const x3 = x2 * cosZ - y2 * sinZ;
         const y3 = x2 * sinZ + y2 * cosZ;
         const z3 = z2;
 
         p.rotatedZ = z3;
 
-        // Perspective projection calculation
+        // Perspective Projection
         const perspective = cameraZ / (cameraZ + z3);
         p.projScale = perspective;
         p.projX = centerX + x3 * perspective;
         p.projY = centerY + y3 * perspective;
 
-        // Triangle glyph rotation
-        p.triangleRot += p.triangleRotSpeed;
+        // Local 3D pyramid tumble
+        p.rotX += p.vRotX;
+        p.rotY += p.vRotY;
+        p.rotZ += p.vRotZ;
 
-        // Breathing opacity
-        p.pulsePhase += p.pulseSpeed;
-        const pulse = (Math.sin(p.pulsePhase) + 1) * 0.5; // 0 to 1
-        const depthAlpha = Math.max(0.12, Math.min(1.0, (z3 + 300) / 600));
-        p.currentOpacity = p.baseOpacity * (0.6 + pulse * 0.4) * depthAlpha;
-      }
-
-      // Sort particles by rotatedZ (back-to-front painter's algorithm)
-      particles.sort((a, b) => a.rotatedZ - b.rotatedZ);
-
-      // 2. DRAW SPARSE SYNAPTIC FILAMENTS (Connect close particles)
-      ctx.save();
-      const sampleLimit = Math.min(particles.length, 240);
-      for (let i = 0; i < sampleLimit; i++) {
-        const p1 = particles[i];
-        if (p1.projScale < 0.8) continue; // Only connect particles in mid/foreground
-
-        for (let j = i + 1; j < Math.min(i + 8, sampleLimit); j++) {
-          const p2 = particles[j];
-          const dx = p1.projX - p2.projX;
-          const dy = p1.projY - p2.projY;
-          const dist2D = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist2D < 38) {
-            const filamentAlpha = (1 - dist2D / 38) * 0.09 * p1.projScale;
-            ctx.globalAlpha = filamentAlpha;
-            ctx.strokeStyle = '#8052ff';
-            ctx.lineWidth = 0.5 * p1.projScale;
-            ctx.beginPath();
-            ctx.moveTo(p1.projX, p1.projY);
-            ctx.lineTo(p2.projX, p2.projY);
-            ctx.stroke();
+        // Check proximity to expanding shockwaves
+        for (let r = 0; r < ripples.length; r++) {
+          const rip = ripples[r];
+          const distToRip = Math.sqrt((p.projX - rip.x) ** 2 + (p.projY - rip.y) ** 2);
+          if (Math.abs(distToRip - rip.radius) < 35) {
+            p.excitation = Math.min(1.0, p.excitation + rip.strength * 0.8);
           }
         }
+
+        // Mouse proximity excitation
+        const distToCursor = Math.sqrt((p.projX - mouseScreenX) ** 2 + (p.projY - mouseScreenY) ** 2);
+        if (distToCursor < 120) {
+          p.excitation = Math.min(1.0, p.excitation + (1 - distToCursor / 120) * 0.15);
+        }
+
+        // Decay excitation
+        p.excitation *= 0.95;
+
+        // Depth-based opacity with breathing
+        p.pulsePhase += p.pulseSpeed;
+        const pulse = (Math.sin(p.pulsePhase) + 1) * 0.5;
+        const depthAlpha = Math.max(0.15, Math.min(1.0, (z3 + 340) / 680));
+        p.currentOpacity = p.baseOpacity * (0.65 + pulse * 0.35) * depthAlpha;
+      }
+
+      // Sort particles by rotatedZ for painter's algorithm depth precision
+      particles.sort((a, b) => a.rotatedZ - b.rotatedZ);
+
+      // 5. DRAW SYNAPTIC CONNECTIONS & FIRING ACTION POTENTIALS
+      ctx.save();
+      const connections = connectionsRef.current;
+      const connLimit = Math.min(connections.length, 300);
+
+      for (let c = 0; c < connLimit; c++) {
+        const conn = connections[c];
+        const p1 = particles[conn.i];
+        const p2 = particles[conn.j];
+
+        if (!p1 || !p2) continue;
+        if (p1.projScale < 0.75 && p2.projScale < 0.75) continue;
+
+        const dx = p1.projX - p2.projX;
+        const dy = p1.projY - p2.projY;
+        const dist2D = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist2D < 42) {
+          const depthAlpha = (p1.currentOpacity + p2.currentOpacity) * 0.5;
+          const excitationBonus = (p1.excitation + p2.excitation) * 0.5;
+          const filamentAlpha = (1 - dist2D / 42) * (0.08 + excitationBonus * 0.25) * depthAlpha;
+
+          ctx.globalAlpha = filamentAlpha;
+          ctx.strokeStyle = excitationBonus > 0.4 ? '#ffb829' : '#8052ff';
+          ctx.lineWidth = 0.6 * p1.projScale;
+          ctx.beginPath();
+          ctx.moveTo(p1.projX, p1.projY);
+          ctx.lineTo(p2.projX, p2.projY);
+          ctx.stroke();
+        }
+      }
+
+      // Update & render traveling synaptic pulses
+      const pulses = pulsesRef.current;
+      for (let pu = 0; pu < pulses.length; pu++) {
+        const pulse = pulses[pu];
+        pulse.progress += pulse.speed;
+
+        if (pulse.progress >= 1.0) {
+          // Re-pick next random connection
+          const conn = connections[Math.floor(Math.random() * connections.length)];
+          if (conn) {
+            pulse.sourceIdx = conn.i;
+            pulse.targetIdx = conn.j;
+            pulse.progress = 0;
+            pulse.color = Math.random() > 0.35 ? '#8052ff' : '#ffb829';
+          }
+          continue;
+        }
+
+        const pSource = particles[pulse.sourceIdx];
+        const pTarget = particles[pulse.targetIdx];
+        if (!pSource || !pTarget) continue;
+
+        const pulseX = pSource.projX + (pTarget.projX - pSource.projX) * pulse.progress;
+        const pulseY = pSource.projY + (pTarget.projY - pSource.projY) * pulse.progress;
+        const pulseScale = pSource.projScale + (pTarget.projScale - pSource.projScale) * pulse.progress;
+
+        ctx.globalAlpha = 0.85 * pulseScale;
+        ctx.fillStyle = pulse.color;
+        ctx.beginPath();
+        ctx.arc(pulseX, pulseY, 1.6 * pulseScale, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.restore();
 
-      // 3. DRAW PARTICLES
+      // 6. DRAW 3D FACETED PYRAMIDS
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
-        const currentSize = Math.max(1.2, p.size * p.projScale);
-        const lineWidth = Math.max(0.6, 1.1 * p.projScale);
+        const currentSize = Math.max(1.4, p.size * p.projScale);
 
-        renderTriangle(
+        renderFacetedPyramid(
           ctx,
           p.projX,
           p.projY,
           currentSize,
-          p.triangleRot,
-          p.color,
+          p.rotX,
+          p.rotY,
+          p.rotZ,
+          p.colorBase,
+          p.colorHighlight,
           p.currentOpacity,
-          lineWidth
+          p.excitation
         );
       }
 
-      // 4. DRAW 3D AMBIENT STARDUST & DRIFTING EMBERS
+      // 7. DRAW 3D CELESTIAL STARDUST
       const dust = stardustRef.current;
       for (let i = 0; i < dust.length; i++) {
         const d = dust[i];
 
-        // Motion
         d.x += d.vx;
-        d.y += d.vy - scrollProgress * 0.5; // Stardust flows upward as user scrolls down
+        d.y += d.vy - scrollProgress * 0.6; // Stardust ascends with scroll
         d.z += d.vz;
 
-        // Wrap boundaries in 3D
-        const boundX = w * 0.9;
-        const boundY = h * 0.9;
+        const boundX = w * 0.95;
+        const boundY = h * 0.95;
         if (d.x < -boundX) d.x = boundX;
         if (d.x > boundX) d.x = -boundX;
         if (d.y < -boundY) d.y = boundY;
         if (d.y > boundY) d.y = -boundY;
-        if (d.z < -600) d.z = 600;
-        if (d.z > 600) d.z = -600;
+        if (d.z < -700) d.z = 700;
+        if (d.z > 700) d.z = -700;
 
-        // Opacity pulsing
         d.opacity += d.opacityDir * d.opacitySpeed;
-        if (d.opacity > 0.55) d.opacityDir = -1;
+        if (d.opacity > 0.6) d.opacityDir = -1;
         if (d.opacity < 0.08) d.opacityDir = 1;
 
-        // Project stardust
         const dScale = cameraZ / (cameraZ + d.z);
         const screenX = w * 0.5 + d.x * dScale;
         const screenY = h * 0.5 + d.y * dScale;
 
         if (screenX >= 0 && screenX <= w && screenY >= 0 && screenY <= h) {
           ctx.save();
-          ctx.globalAlpha = d.opacity * Math.min(dScale, 1.2);
+          ctx.globalAlpha = d.opacity * Math.min(dScale, 1.25);
           ctx.fillStyle = d.color;
           ctx.beginPath();
           ctx.arc(screenX, screenY, Math.max(0.8, d.size * dScale), 0, Math.PI * 2);
@@ -512,6 +793,8 @@ export function BrainConstellationCanvas() {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('scroll', handleScroll);
     };
